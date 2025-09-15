@@ -9,6 +9,17 @@
 }
 
 @layer base {
+  /* Fix for select dropdown text visibility in dark themes */
+  select option {
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+  }
+  
+  select[style*="colorScheme: dark"] option {
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;

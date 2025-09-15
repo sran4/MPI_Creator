@@ -195,7 +195,16 @@ export default function LoginPage() {
               <p className="text-white opacity-80">
                 Don't have an account?{' '}
                 <Link href="/signup" className="text-blue-400 hover:text-blue-300 underline">
-                  Sign up
+                  Engineer Signup
+                </Link>
+              </p>
+            </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-white opacity-60 text-sm">
+                Need admin access?{' '}
+                <Link href="/admin/signup" className="text-red-400 hover:text-red-300 underline">
+                  Admin Signup
                 </Link>
               </p>
             </div>

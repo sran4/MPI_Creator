@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import dbConnect from '@/lib/mongodb'
-import GlobalSteps from '@/models/GlobalSteps'
+import Task from '@/models/Task'
+import ProcessItems from '@/models/ProcessItems'
 import Engineer from '@/models/Engineer'
 import Admin from '@/models/Admin'
 
@@ -19,13 +20,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    const steps = await GlobalSteps.find({ isActive: true })
+    const steps = await Task.find({ isActive: true })
+      .populate('processItem', 'categoryName')
       .sort({ createdAt: -1 })
 
     return NextResponse.json({ steps })
 
   } catch (error) {
-    console.error('Error fetching global steps:', error)
+    console.error('Error fetching tasks:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -47,35 +49,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    const { title, content, category, section } = await request.json()
+    const requestBody = await request.json()
+    console.log('📝 Task creation request body:', requestBody)
+    
+    const { step, processItemId } = requestBody
 
-    if (!title || !content || !category || !section) {
+    if (!step || !processItemId) {
+      console.log('❌ Missing required fields:', { step: !!step, processItemId: !!processItemId })
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'Step and process item are required' },
         { status: 400 }
       )
     }
 
-    // Create new global step
-    const step = new GlobalSteps({
-      title,
-      content,
-      category,
-      section,
+    // Verify the process item exists
+    const processItem = await ProcessItems.findById(processItemId)
+    if (!processItem) {
+      return NextResponse.json(
+        { error: 'Invalid process item' },
+        { status: 400 }
+      )
+    }
+
+    // Create new task
+    const task = new Task({
+      step,
+      categoryName: processItem.categoryName,
+      processItem: processItemId,
       isGlobal: true,
       createdBy: decoded.userId, // User creating the step (admin or engineer)
       createdByModel: decoded.userType === 'admin' ? 'Admin' : 'Engineer',
     })
 
-    await step.save()
+    await task.save()
 
     return NextResponse.json({
       success: true,
-      step: step
+      step: task
     }, { status: 201 })
 
   } catch (error: any) {
-    console.error('Error creating global step:', error)
+    console.error('Error creating task:', error)
     
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map((err: any) => err.message)

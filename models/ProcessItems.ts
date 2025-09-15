@@ -9,9 +9,8 @@ export interface IStep {
   updatedAt: Date
 }
 
-export interface IStepCategory extends Document {
+export interface IProcessItems extends Document {
   categoryName: string
-  description: string
   steps: IStep[]
   isGlobal: boolean
   createdBy: mongoose.Types.ObjectId
@@ -47,40 +46,12 @@ const StepSchema = new Schema<IStep>({
   timestamps: true,
 })
 
-const StepCategorySchema = new Schema<IStepCategory>({
+const ProcessItemsSchema = new Schema<IProcessItems>({
   categoryName: {
     type: String,
     required: [true, 'Category name is required'],
     trim: true,
-    unique: true,
-    enum: [
-      'Applicable Documents',
-      'General Instructions',
-      'General',
-      'Kit Release',
-      'SMT Preparation/Planning',
-      'Paste Print',
-      'Reflow',
-      'First Article Approval',
-      'SMT Additional Instructions',
-      'Production Quantity Approval',
-      'Wave Solder',
-      'Through Hole Stuffing',
-      '2nd Operations',
-      'Selective Solder',
-      'Wash and Dry',
-      'Flying Probe Test',
-      'AOI Test',
-      'TH Stuffing',
-      'Final QC',
-      'Shipping and Delivery',
-      'Packaging'
-    ],
-  },
-  description: {
-    type: String,
-    trim: true,
-    maxlength: [500, 'Description cannot exceed 500 characters'],
+    maxlength: [100, 'Category name cannot exceed 100 characters'],
   },
   steps: [StepSchema],
   isGlobal: {
@@ -111,25 +82,29 @@ const StepCategorySchema = new Schema<IStepCategory>({
 })
 
 // Index for better performance
-StepCategorySchema.index({ categoryName: 1 })
-StepCategorySchema.index({ isGlobal: 1 })
-StepCategorySchema.index({ isActive: 1 })
-StepCategorySchema.index({ createdBy: 1 })
+ProcessItemsSchema.index({ isGlobal: 1 })
+ProcessItemsSchema.index({ isActive: 1 })
+ProcessItemsSchema.index({ createdBy: 1 })
+
+// Case-insensitive unique index for categoryName
+ProcessItemsSchema.index({ categoryName: 1 }, { 
+  unique: true, 
+  collation: { locale: 'en', strength: 2 } 
+})
 
 // Text index for search functionality
-StepCategorySchema.index({ 
-  categoryName: 'text', 
-  description: 'text',
+ProcessItemsSchema.index({ 
+  categoryName: 'text',
   'steps.title': 'text',
   'steps.content': 'text'
 })
 
 // Clear the model cache to force schema refresh
-if (mongoose.models.StepCategory) {
-  delete mongoose.models.StepCategory
+if (mongoose.models.ProcessItems) {
+  delete mongoose.models.ProcessItems
 }
 
 // Create the model
-const StepCategoryModel = mongoose.model<IStepCategory>('StepCategory', StepCategorySchema)
+const ProcessItemsModel = mongoose.model<IProcessItems>('ProcessItems', ProcessItemsSchema)
 
-export default StepCategoryModel
+export default ProcessItemsModel

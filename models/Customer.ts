@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose'
 
 export interface ICustomer extends Document {
-  customerName: string
+  customerCompanyId: mongoose.Types.ObjectId
   assemblyName: string
   assemblyRev: string
   drawingName: string
@@ -17,11 +17,10 @@ export interface ICustomer extends Document {
 }
 
 const CustomerSchema = new Schema<ICustomer>({
-  customerName: {
-    type: String,
-    required: [true, 'Customer name is required'],
-    trim: true,
-    maxlength: [100, 'Customer name cannot exceed 100 characters'],
+  customerCompanyId: {
+    type: Schema.Types.ObjectId,
+    ref: 'CustomerCompany',
+    required: [true, 'Customer company is required'],
   },
   assemblyName: {
     type: String,
@@ -79,14 +78,14 @@ const CustomerSchema = new Schema<ICustomer>({
 })
 
 // Index for better performance
-CustomerSchema.index({ customerName: 1 })
+CustomerSchema.index({ customerCompanyId: 1 })
 CustomerSchema.index({ assemblyName: 1 })
 CustomerSchema.index({ engineerId: 1 })
 CustomerSchema.index({ isActive: 1 })
 
-// Compound index for unique customer-assembly combination per engineer
+// Compound index for unique customer company-assembly combination per engineer
 CustomerSchema.index({ 
-  customerName: 1, 
+  customerCompanyId: 1, 
   assemblyName: 1, 
   engineerId: 1 
 }, { 

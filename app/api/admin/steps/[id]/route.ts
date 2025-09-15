@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import dbConnect from '@/lib/mongodb'
-import GlobalSteps from '@/models/GlobalSteps'
+import Task from '@/models/Task'
+import ProcessItems from '@/models/ProcessItems'
+import mongoose from 'mongoose'
 
 export async function PUT(
   request: NextRequest,
@@ -20,21 +22,44 @@ export async function PUT(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const updateData = await request.json()
+    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+      return NextResponse.json({ error: 'Invalid step ID' }, { status: 400 })
+    }
 
-    const step = await GlobalSteps.findById(params.id)
-    if (!step) {
+    const { step: stepContent, processItemId } = await request.json()
+
+    if (!stepContent || !processItemId) {
       return NextResponse.json(
-        { error: 'Global step not found' },
+        { error: 'Step and process item are required' },
+        { status: 400 }
+      )
+    }
+
+    // Verify the process item exists
+    const processItem = await ProcessItems.findById(processItemId)
+    if (!processItem) {
+      return NextResponse.json(
+        { error: 'Invalid process item' },
+        { status: 400 }
+      )
+    }
+
+    const task = await Task.findById(params.id)
+    if (!task) {
+      return NextResponse.json(
+        { error: 'Task not found' },
         { status: 404 }
       )
     }
 
     // Update step
-    Object.assign(step, updateData)
-    await step.save()
+    task.step = stepContent
+    task.categoryName = processItem.categoryName
+    task.processItem = processItemId
+    await task.save()
 
-    const updatedStep = await GlobalSteps.findById(step._id)
+    const updatedStep = await Task.findById(task._id)
+      .populate('processItem', 'categoryName')
       .populate('createdBy', 'fullName')
 
     return NextResponse.json({
@@ -43,7 +68,7 @@ export async function PUT(
     })
 
   } catch (error) {
-    console.error('Error updating global step:', error)
+    console.error('Error updating task:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -68,24 +93,24 @@ export async function DELETE(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const step = await GlobalSteps.findById(params.id)
+    const step = await Task.findById(params.id)
     if (!step) {
       return NextResponse.json(
-        { error: 'Global step not found' },
+        { error: 'Task not found' },
         { status: 404 }
       )
     }
 
     // Hard delete - actually remove from database
-    await GlobalSteps.findByIdAndDelete(params.id)
+    await Task.findByIdAndDelete(params.id)
 
     return NextResponse.json({
       success: true,
-      message: 'Global step deleted successfully'
+      message: 'Task deleted successfully'
     })
 
   } catch (error) {
-    console.error('Error deleting global step:', error)
+    console.error('Error deleting task:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

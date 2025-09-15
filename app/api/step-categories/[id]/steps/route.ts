@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
-import StepCategory from '@/models/StepCategory'
+import ProcessItems from '@/models/ProcessItems'
 import Engineer from '@/models/Engineer'
 import Admin from '@/models/Admin'
 import jwt from 'jsonwebtoken'
@@ -28,7 +28,7 @@ export async function POST(
       return NextResponse.json({ error: 'Step title and content are required' }, { status: 400 })
     }
 
-    const category = await StepCategory.findById(params.id)
+    const category = await ProcessItems.findById(params.id)
     if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
@@ -74,7 +74,7 @@ export async function PUT(
 
     const { stepId, title, content, order } = await request.json()
 
-    const category = await StepCategory.findById(params.id)
+    const category = await ProcessItems.findById(params.id)
     if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
@@ -120,7 +120,7 @@ export async function DELETE(
 
     const { stepId } = await request.json()
 
-    const category = await StepCategory.findById(params.id)
+    const category = await ProcessItems.findById(params.id)
     if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }

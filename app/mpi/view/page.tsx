@@ -61,10 +61,10 @@ export default function MPIViewPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-8 mb-8">
           <h1 className="text-4xl font-bold text-white mb-4">
-            Manufacturing Process Instructions (MPI)
+            Customer Information (MPI)
           </h1>
           <h2 className="text-2xl font-semibold text-white opacity-90 mb-4">
-            {mpi.customerId?.assemblyName || 'Assembly Name'}
+            {mpi.customerAssemblyName || 'Assembly Name'}
           </h2>
           <div className="flex justify-center items-center space-x-4 text-white opacity-80">
             <span>MPI Number: {mpi.mpiNumber}</span>
@@ -79,14 +79,18 @@ export default function MPIViewPage() {
           <h3 className="text-xl font-semibold text-white mb-4">Customer Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-white opacity-80">
             <div>
-              <p><strong>Customer:</strong> {mpi.customerId?.customerName || 'N/A'}</p>
-              <p><strong>Assembly:</strong> {mpi.customerId?.assemblyName || 'N/A'}</p>
-              <p><strong>Assembly Rev:</strong> {mpi.customerId?.assemblyRev || 'N/A'}</p>
+              <p><strong>Customer:</strong> {mpi.customerCompanyId?.companyName || 'N/A'}</p>
+              <p><strong>Customer Assembly Name:</strong> {mpi.customerAssemblyName || 'N/A'}</p>
+              <p><strong>Assembly Rev:</strong> {mpi.assemblyRev || 'N/A'}</p>
+              <p><strong>Drawing Name:</strong> {mpi.drawingName || 'N/A'}</p>
+              <p><strong>Drawing Rev:</strong> {mpi.drawingRev || 'N/A'}</p>
             </div>
             <div>
-              <p><strong>Drawing:</strong> {mpi.customerId?.drawingName || 'N/A'}</p>
-              <p><strong>Drawing Rev:</strong> {mpi.customerId?.drawingRev || 'N/A'}</p>
-              <p><strong>Quantity:</strong> {mpi.customerId?.assemblyQuantity || 'N/A'} units</p>
+              <p><strong>Assembly Quantity:</strong> {mpi.assemblyQuantity || 'N/A'}</p>
+              <p><strong>Kit Received Date:</strong> {mpi.kitReceivedDate ? new Date(mpi.kitReceivedDate).toLocaleDateString() : 'N/A'}</p>
+              <p><strong>Date Released:</strong> {mpi.dateReleased || 'N/A'}</p>
+              <p><strong>Pages:</strong> {mpi.pages || 'N/A'}</p>
+              <p><strong>Location:</strong> {mpi.customerCompanyId?.city}, {mpi.customerCompanyId?.state}</p>
             </div>
           </div>
         </div>

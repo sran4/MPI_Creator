@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
-import StepCategory from '@/models/StepCategory'
+import ProcessItems from '@/models/ProcessItems'
 import Engineer from '@/models/Engineer'
 import Admin from '@/models/Admin'
 import jwt from 'jsonwebtoken'
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    const categories = await StepCategory.find({ isActive: true })
+    const categories = await ProcessItems.find({ isActive: true })
       .sort({ categoryName: 1 })
 
     return NextResponse.json({ 
@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
       categories: categories.map(cat => ({
         _id: cat._id,
         categoryName: cat.categoryName,
-        description: cat.description,
         steps: cat.steps.filter(step => step.isActive).sort((a, b) => a.order - b.order),
         usageCount: cat.usageCount,
         createdAt: cat.createdAt,
@@ -59,8 +58,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    const { categoryName, description, stepTitle, stepContent } = await request.json()
-    console.log('Request data:', { categoryName, description, stepTitle, stepContent })
+    const { categoryName, stepTitle, stepContent } = await request.json()
+    console.log('Request data:', { categoryName, stepTitle, stepContent })
 
     if (!categoryName || !stepTitle || !stepContent) {
       console.log('Missing required fields')
@@ -69,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     // Find or create the category
     console.log('Looking for category:', categoryName)
-    let category = await StepCategory.findOne({ categoryName })
+    let category = await ProcessItems.findOne({ categoryName })
     console.log('Found category:', category ? 'Yes' : 'No')
     
     if (!category) {
@@ -77,9 +76,8 @@ export async function POST(request: NextRequest) {
       // Create new category - use a placeholder user ID for now
       const placeholderUserId = new mongoose.Types.ObjectId()
       
-      category = new StepCategory({
+      category = new ProcessItems({
         categoryName,
-        description: description || '',
         steps: [],
         createdBy: placeholderUserId,
         createdByModel: 'Engineer', // Default to Engineer
@@ -109,7 +107,6 @@ export async function POST(request: NextRequest) {
       category: {
         _id: category._id,
         categoryName: category.categoryName,
-        description: category.description,
         steps: category.steps.filter(step => step.isActive).sort((a, b) => a.order - b.order),
         usageCount: category.usageCount
       }

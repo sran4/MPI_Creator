@@ -9,33 +9,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Plus, User, Building, FileText, Calendar } from 'lucide-react'
+import { ArrowLeft, Plus, User, Building, FileText, Calendar, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 
-interface Customer {
+interface CustomerCompany {
   _id: string
-  customerName: string
-  assemblyName: string
+  companyName: string
+  city: string
+  state: string
+}
+
+interface NewMPIForm {
+  customerCompanyId: string
+  jobNumber: string
+  oldJobNumber: string
+  mpiNumber: string
+  mpiVersion: string
+  customerAssemblyName: string
   assemblyRev: string
   drawingName: string
   drawingRev: string
   assemblyQuantity: number
   kitReceivedDate: string
-  kitCompleteDate: string
-  comments: string
-}
-
-interface NewMPIForm {
-  customerId: string
-  mpiNumber: string
-  mpiVersion: string
+  dateReleased: string
+  pages: string
 }
 
 export default function NewMPIPage() {
-  const [customers, setCustomers] = useState<Customer[]>([])
+  const [customerCompanies, setCustomerCompanies] = useState<CustomerCompany[]>([])
+  const [existingJobNumbers, setExistingJobNumbers] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true)
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true)
+  const [showPreview, setShowPreview] = useState(false)
   const router = useRouter()
 
   const {
@@ -46,16 +52,22 @@ export default function NewMPIPage() {
     formState: { errors }
   } = useForm<NewMPIForm>()
 
-  const selectedCustomerId = watch('customerId')
+  const selectedCustomerCompanyId = watch('customerCompanyId')
 
   useEffect(() => {
-    fetchCustomers()
+    fetchCustomerCompanies()
+    fetchJobNumbers()
+    generateJobNumber()
+    generateMPINumber()
+    // Set default values
+    setValue('dateReleased', new Date().toLocaleDateString('en-US'))
+    setValue('pages', '04')
   }, [])
 
-  const fetchCustomers = async () => {
+  const fetchCustomerCompanies = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/customers', {
+      const response = await fetch('/api/customer-companies', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -63,20 +75,83 @@ export default function NewMPIPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setCustomers(data.customers || [])
+        setCustomerCompanies(data.customerCompanies || [])
       } else {
-        toast.error('Failed to fetch customers')
+        toast.error('Failed to fetch customer companies')
       }
     } catch (error) {
-      console.error('Error fetching customers:', error)
-      toast.error('Error loading customers')
+      console.error('Error fetching customer companies:', error)
+      toast.error('Error loading customer companies')
     } finally {
-      setIsLoadingCustomers(false)
+      setIsLoadingCompanies(false)
+    }
+  }
+
+  const fetchJobNumbers = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/mpi/job-numbers', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setExistingJobNumbers(data.oldJobNumbers || [])
+      }
+    } catch (error) {
+      console.error('Error fetching job numbers:', error)
+    }
+  }
+
+  const generateJobNumber = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/mpi/job-numbers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setValue('jobNumber', data.jobNumber)
+      }
+    } catch (error) {
+      console.error('Error generating job number:', error)
+    }
+  }
+
+  const generateMPINumber = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/mpi/mpi-numbers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setValue('mpiNumber', data.mpiNumber)
+      }
+    } catch (error) {
+      console.error('Error generating MPI number:', error)
     }
   }
 
   const onSubmit = async (data: NewMPIForm) => {
     setIsLoading(true)
+    
+    // Validate that a valid customer company is selected
+    if (!data.customerCompanyId || data.customerCompanyId === 'no-companies') {
+      toast.error('Please select a valid customer company')
+      setIsLoading(false)
+      return
+    }
     
     try {
       const token = localStorage.getItem('token')
@@ -86,7 +161,21 @@ export default function NewMPIPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          customerCompanyId: data.customerCompanyId,
+          jobNumber: data.jobNumber,
+          oldJobNumber: data.oldJobNumber,
+          mpiNumber: data.mpiNumber,
+          mpiVersion: data.mpiVersion,
+          customerAssemblyName: data.customerAssemblyName,
+          assemblyRev: data.assemblyRev,
+          drawingName: data.drawingName,
+          drawingRev: data.drawingRev,
+          assemblyQuantity: data.assemblyQuantity,
+          kitReceivedDate: data.kitReceivedDate,
+          dateReleased: data.dateReleased,
+          pages: data.pages
+        }),
       })
 
       const result = await response.json()
@@ -105,9 +194,31 @@ export default function NewMPIPage() {
     }
   }
 
-  const selectedCustomer = customers.find(c => c._id === selectedCustomerId)
+  const selectedCustomerCompany = customerCompanies.find(c => c._id === selectedCustomerCompanyId)
 
-  if (isLoadingCustomers) {
+  const handlePreview = () => {
+    setShowPreview(true)
+  }
+
+  const getFormData = () => {
+    const form = document.querySelector('form') as HTMLFormElement
+    if (!form) return null
+    
+    const formData = new FormData(form)
+    return {
+      jobNumber: formData.get('jobNumber') as string,
+      oldJobNumber: formData.get('oldJobNumber') as string,
+      mpiNumber: formData.get('mpiNumber') as string,
+      mpiVersion: formData.get('mpiVersion') as string,
+      customerCompanyId: formData.get('customerCompanyId') as string,
+      customerAssemblyNumber: formData.get('customerAssemblyNumber') as string,
+      assemblyName: formData.get('assemblyName') as string,
+      dateReleased: formData.get('dateReleased') as string,
+      pages: formData.get('pages') as string,
+    }
+  }
+
+  if (isLoadingCompanies) {
     return (
       <div className="min-h-screen gradient-bg dark:gradient-bg flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
@@ -145,7 +256,7 @@ export default function NewMPIPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 pb-8">
+      <main className="max-w-6xl mx-auto px-6 pb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -155,58 +266,248 @@ export default function NewMPIPage() {
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-white flex items-center">
                 <Plus className="h-6 w-6 mr-3" />
-                MPI Information
+                CUSTOMER INFORMATION
               </CardTitle>
               <CardDescription className="text-white opacity-80">
-                Fill in the basic information for your new MPI
+                Create a new Manufacturing Process Instruction document
               </CardDescription>
             </CardHeader>
             
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Customer Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="customerId" className="text-white flex items-center">
-                    <Building className="h-4 w-4 mr-2" />
-                    Customer & Assembly *
+                {/* Header Section - Professional Layout */}
+                <div className="bg-white/5 border border-white/10 rounded-lg p-6 max-h-[80vh] overflow-y-auto">
+                  <div className="mb-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+                    <p className="text-blue-200 text-sm">
+                      <strong>Note:</strong> Scroll down to see all form fields including Drawing Name, Drawing Rev, Assembly Quantity, and Kit Received Date.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column */}
+                    <div className="space-y-4">
+                      {/* Job No. */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[120px] text-right">
+                          Job No.:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            className="bg-white/10 border-white/20 text-white text-center font-mono"
+                            {...register('jobNumber', { required: 'Job number is required' })}
+                            readOnly
+                          />
+                        </div>
+                      </div>
+
+                      {/* Old Job No. */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[120px] text-right">
+                          Old Job No.:
+                        </Label>
+                        <div className="flex-1">
+                          <Select onValueChange={(value) => setValue('oldJobNumber', value)}>
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                              <SelectValue placeholder="Select or N/A" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="N/A">N/A</SelectItem>
+                              {existingJobNumbers.map((jobNumber) => (
+                                <SelectItem key={jobNumber} value={jobNumber}>
+                                  {jobNumber}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Customer Name */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[120px] text-right">
+                          Customer Name:
                   </Label>
-                  <Select onValueChange={(value) => setValue('customerId', value)}>
+                        <div className="flex-1">
+                          <Select onValueChange={(value) => setValue('customerCompanyId', value)}>
                     <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                      <SelectValue placeholder="Select customer and assembly" />
+                              <SelectValue placeholder="Select customer company" />
                     </SelectTrigger>
                     <SelectContent>
-                      {customers.length === 0 ? (
-                        <SelectItem value="" disabled>
-                          No customers available. Create a customer first.
+                              {customerCompanies.length === 0 ? (
+                                <SelectItem value="no-companies" disabled>
+                                  No customer companies available
                         </SelectItem>
                       ) : (
-                        customers.map((customer) => (
-                          <SelectItem key={customer._id} value={customer._id}>
-                            {customer.customerName} - {customer.assemblyName} (Rev: {customer.assemblyRev})
+                                customerCompanies.map((company) => (
+                                  <SelectItem key={company._id} value={company._id}>
+                                    {company.companyName} - {company.city}, {company.state}
                           </SelectItem>
                         ))
                       )}
                     </SelectContent>
                   </Select>
-                  {errors.customerId && (
-                    <p className="text-red-400 text-sm">{errors.customerId.message}</p>
-                  )}
-                  {customers.length === 0 && (
-                    <div className="mt-4 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-                      <p className="text-yellow-200 text-sm">
-                        You need to create a customer first before creating an MPI.
-                      </p>
-                      <Link href="/customers/new">
-                        <Button variant="outline" size="sm" className="mt-2 border-yellow-500 text-yellow-200 hover:bg-yellow-500/20">
-                          Create Customer
-                        </Button>
-                      </Link>
+                        </div>
+                      </div>
+
+                      {/* Customer Assembly Name */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[120px] text-right">
+                          Customer Assembly Name:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            placeholder="e.g., Clock Module"
+                            className="bg-white/10 border-white/20 text-white"
+                            {...register('customerAssemblyName', { required: 'Customer assembly name is required' })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Assembly Rev */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[120px] text-right">
+                          Assembly Rev:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            placeholder="e.g., Rev 5, V1.0"
+                            className="bg-white/10 border-white/20 text-white"
+                            {...register('assemblyRev', { required: 'Assembly revision is required' })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Drawing Name */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[120px] text-right">
+                          Drawing Name:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            placeholder="e.g., DWG-001, Drawing A"
+                            className="bg-white/10 border-white/20 text-white"
+                            {...register('drawingName', { required: 'Drawing name is required' })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Drawing Rev */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[120px] text-right">
+                          Drawing Rev:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            placeholder="e.g., Rev A, V1.0"
+                            className="bg-white/10 border-white/20 text-white"
+                            {...register('drawingRev', { required: 'Drawing revision is required' })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Assembly Quantity */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[120px] text-right">
+                          Assembly Quantity:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="number"
+                            placeholder="e.g., 100, 500"
+                            min="1"
+                            className="bg-white/10 border-white/20 text-white"
+                            {...register('assemblyQuantity', { 
+                              required: 'Assembly quantity is required',
+                              min: { value: 1, message: 'Quantity must be at least 1' }
+                            })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Kit Received Date */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[120px] text-right">
+                          Kit Received Date:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="date"
+                            className="bg-white/10 border-white/20 text-white"
+                            {...register('kitReceivedDate', { required: 'Kit received date is required' })}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Right Column */}
+                    <div className="space-y-4">
+                      {/* MPI No. */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[100px] text-right">
+                          MPI No.:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            className="bg-white/10 border-white/20 text-white text-center font-mono"
+                            {...register('mpiNumber', { required: 'MPI number is required' })}
+                            readOnly
+                          />
+                        </div>
+                      </div>
+
+                      {/* MPI Rev */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[100px] text-right">
+                          MPI Rev:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            placeholder="e.g., 0, Rev A"
+                            className="bg-white/10 border-white/20 text-white text-center"
+                            {...register('mpiVersion')}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Date Released */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[100px] text-right">
+                          Date Released:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            className="bg-white/10 border-white/20 text-white text-center"
+                            {...register('dateReleased', { required: 'Date released is required' })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Pages */}
+                      <div className="flex items-center space-x-4">
+                        <Label className="text-white font-semibold min-w-[100px] text-right">
+                          Pages:
+                        </Label>
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            className="bg-white/10 border-white/20 text-white text-center"
+                            {...register('pages', { required: 'Pages is required' })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Selected Customer Details */}
-                {selectedCustomer && (
+                {/* Selected Customer Company Details */}
+                {selectedCustomerCompany && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -214,79 +515,37 @@ export default function NewMPIPage() {
                     className="p-4 bg-white/10 border border-white/20 rounded-lg"
                   >
                     <h4 className="text-white font-semibold mb-3 flex items-center">
-                      <User className="h-4 w-4 mr-2" />
-                      Selected Customer Details
+                      <Building className="h-4 w-4 mr-2" />
+                      Selected Customer Company Details
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white opacity-80 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white opacity-80 text-sm">
                       <div>
-                        <p><strong>Customer:</strong> {selectedCustomer.customerName}</p>
-                        <p><strong>Assembly:</strong> {selectedCustomer.assemblyName}</p>
-                        <p><strong>Assembly Rev:</strong> {selectedCustomer.assemblyRev}</p>
+                        <p><strong>Company:</strong> {selectedCustomerCompany.companyName}</p>
                       </div>
                       <div>
-                        <p><strong>Drawing:</strong> {selectedCustomer.drawingName}</p>
-                        <p><strong>Drawing Rev:</strong> {selectedCustomer.drawingRev}</p>
-                        <p><strong>Quantity:</strong> {selectedCustomer.assemblyQuantity}</p>
+                        <p><strong>City:</strong> {selectedCustomerCompany.city}</p>
+                      </div>
+                      <div>
+                        <p><strong>State:</strong> {selectedCustomerCompany.state}</p>
                       </div>
                     </div>
-                    {selectedCustomer.comments && (
-                      <div className="mt-3">
-                        <p><strong>Comments:</strong> {selectedCustomer.comments}</p>
-                      </div>
-                    )}
                   </motion.div>
                 )}
 
-                {/* MPI Number */}
-                <div className="space-y-2">
-                  <Label htmlFor="mpiNumber" className="text-white flex items-center">
-                    <FileText className="h-4 w-4 mr-2" />
-                    MPI Number *
-                  </Label>
-                  <Input
-                    id="mpiNumber"
-                    type="text"
-                    placeholder="e.g., MPI-2024-001"
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:ring-blue-500"
-                    {...register('mpiNumber', {
-                      required: 'MPI number is required',
-                      pattern: {
-                        value: /^[A-Z0-9-_]+$/,
-                        message: 'MPI number can only contain uppercase letters, numbers, hyphens, and underscores'
-                      }
-                    })}
-                  />
-                  {errors.mpiNumber && (
-                    <p className="text-red-400 text-sm">{errors.mpiNumber.message}</p>
-                  )}
+                {/* Error Messages */}
+                {Object.keys(errors).length > 0 && (
+                  <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+                    <h4 className="text-red-200 font-semibold mb-2">Please fix the following errors:</h4>
+                    <ul className="text-red-200 text-sm space-y-1">
+                      {Object.entries(errors).map(([field, error]) => (
+                        <li key={field}>• {error?.message}</li>
+                      ))}
+                    </ul>
                 </div>
+                )}
 
-                {/* MPI Version */}
-                <div className="space-y-2">
-                  <Label htmlFor="mpiVersion" className="text-white flex items-center">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    MPI Version *
-                  </Label>
-                  <Input
-                    id="mpiVersion"
-                    type="text"
-                    placeholder="e.g., Rev A, V1.0, 2024.1"
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:ring-blue-500"
-                    {...register('mpiVersion', {
-                      required: 'MPI version is required',
-                      minLength: {
-                        value: 1,
-                        message: 'Version must be at least 1 character'
-                      }
-                    })}
-                  />
-                  {errors.mpiVersion && (
-                    <p className="text-red-400 text-sm">{errors.mpiVersion.message}</p>
-                  )}
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex justify-end space-x-4 pt-6">
+                {/* Action Buttons */}
+                <div className="flex justify-between pt-6">
                   <Link href="/dashboard">
                     <Button
                       type="button"
@@ -296,19 +555,252 @@ export default function NewMPIPage() {
                       Cancel
                     </Button>
                   </Link>
+                  <div className="flex space-x-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handlePreview}
+                      className="border-white text-white hover:bg-white hover:text-gray-900"
+                      disabled={!selectedCustomerCompany}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </Button>
                   <Button
                     type="submit"
                     className="bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={isLoading || customers.length === 0}
+                      disabled={isLoading || customerCompanies.length === 0}
                   >
                     {isLoading ? 'Creating MPI...' : 'Create MPI'}
                   </Button>
+                  </div>
                 </div>
               </form>
             </CardContent>
           </Card>
         </motion.div>
       </main>
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                MPI Preview
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPreview(false)}
+                className="text-gray-600 dark:text-gray-400"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Preview Content */}
+            <div className="space-y-6">
+              {/* Header Section */}
+              <div className="border-2 border-gray-300 rounded-lg p-6">
+                <h1 className="text-2xl font-bold text-center mb-6 text-gray-900">
+                  CUSTOMER INFORMATION
+                </h1>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Left Column */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <span className="font-semibold text-gray-900 min-w-[120px] text-right">
+                        Job No.:
+                      </span>
+                      <span className="font-mono bg-gray-100 px-3 py-1 rounded">
+                        {watch('jobNumber') || 'U000001'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <span className="font-semibold text-gray-900 min-w-[120px] text-right">
+                        Old Job No.:
+                      </span>
+                      <span className="font-mono bg-gray-100 px-3 py-1 rounded">
+                        {watch('oldJobNumber') || 'N/A'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <span className="font-semibold text-gray-900 min-w-[120px] text-right">
+                        Customer Name:
+                      </span>
+                      <span className="bg-gray-100 px-3 py-1 rounded">
+                        {selectedCustomerCompany?.companyName || 'Select Customer'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <span className="font-semibold text-gray-900 min-w-[120px] text-right">
+                        Customer Assembly Name:
+                      </span>
+                      <span className="bg-gray-100 px-3 py-1 rounded">
+                        {watch('customerAssemblyName') || 'Enter assembly name'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <span className="font-semibold text-gray-900 min-w-[120px] text-right">
+                        Assembly Rev:
+                      </span>
+                      <span className="bg-gray-100 px-3 py-1 rounded">
+                        {watch('assemblyRev') || 'Enter assembly revision'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <span className="font-semibold text-gray-900 min-w-[100px] text-right">
+                        MPI No.:
+                      </span>
+                      <span className="font-mono bg-gray-100 px-3 py-1 rounded">
+                        {watch('mpiNumber') || 'MPI000001'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <span className="font-semibold text-gray-900 min-w-[100px] text-right">
+                        MPI Rev:
+                      </span>
+                      <span className="bg-gray-100 px-3 py-1 rounded">
+                        {watch('mpiVersion') || '0'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <span className="font-semibold text-gray-900 min-w-[100px] text-right">
+                        Date Released:
+                      </span>
+                      <span className="bg-gray-100 px-3 py-1 rounded">
+                        {watch('dateReleased') || new Date().toLocaleDateString('en-US')}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <span className="font-semibold text-gray-900 min-w-[100px] text-right">
+                        Pages:
+                      </span>
+                      <span className="bg-gray-100 px-3 py-1 rounded">
+                        {watch('pages') || '04'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Company Details */}
+              {selectedCustomerCompany && (
+                <div className="border border-gray-300 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Customer Company Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-700">
+                    <div>
+                      <p><strong>Company:</strong> {selectedCustomerCompany.companyName}</p>
+                    </div>
+                    <div>
+                      <p><strong>City:</strong> {selectedCustomerCompany.city}</p>
+                    </div>
+                    <div>
+                      <p><strong>State:</strong> {selectedCustomerCompany.state}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Customer Data (Not shown in printed MPI) */}
+              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  Additional Customer Data (Database Only)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                  <div>
+                    <p><strong>Drawing Name:</strong> {watch('drawingName') || 'Enter drawing name'}</p>
+                  </div>
+                  <div>
+                    <p><strong>Drawing Rev:</strong> {watch('drawingRev') || 'Enter drawing revision'}</p>
+                  </div>
+                  <div>
+                    <p><strong>Assembly Quantity:</strong> {watch('assemblyQuantity') || 'Enter quantity'}</p>
+                  </div>
+                  <div>
+                    <p><strong>Kit Received Date:</strong> {watch('kitReceivedDate') || 'Select date'}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-2 italic">
+                  * These fields are saved to the database but will not appear in the printed MPI document.
+                </p>
+              </div>
+
+              {/* Default Sections Preview */}
+              <div className="border border-gray-300 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  MPI Sections (Default)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                  <div>1. Applicable Documents</div>
+                  <div>2. General Instructions</div>
+                  <div>3. Kit Release</div>
+                  <div>4. SMT Preparation/Planning</div>
+                  <div>5. Paste Print</div>
+                  <div>6. Reflow</div>
+                  <div>7. First Article Approval</div>
+                  <div>8. SMT Additional Instructions</div>
+                  <div>9. Wave Solder</div>
+                  <div>10. Through Hole Stuffing</div>
+                  <div>11. 2nd Operations</div>
+                  <div>12. Selective Solder</div>
+                  <div>13. Wash and Dry</div>
+                  <div>14. Flying Probe Test</div>
+                  <div>15. Solder Paste Inspection</div>
+                  <div>16. Automatic Optical Inspection (AOI)</div>
+                  <div>17. Final QC</div>
+                  <div>18. Ship and Delivery</div>
+                  <div>19. Packaging</div>
+                  <div>20. Test</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview Actions */}
+            <div className="flex justify-end space-x-4 mt-6 pt-6 border-t border-gray-300">
+              <Button
+                variant="outline"
+                onClick={() => setShowPreview(false)}
+              >
+                Close Preview
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowPreview(false)
+                  // Trigger form submission
+                  const form = document.querySelector('form') as HTMLFormElement
+                  if (form) {
+                    form.requestSubmit()
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={!selectedCustomerCompany}
+              >
+                Create MPI
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

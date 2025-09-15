@@ -19,16 +19,30 @@ interface MPISection {
   order: number
   isCollapsed: boolean
   images: string[]
+  documentId?: string
 }
 
 interface MPI {
   _id: string
+  jobNumber: string
+  oldJobNumber?: string
   mpiNumber: string
   mpiVersion: string
-  customerId: {
-    customerName: string
-    assemblyName: string
+  customerCompanyId: {
+    companyName: string
+    city: string
+    state: string
   }
+  customerAssemblyName: string
+  assemblyRev: string
+  drawingName: string
+  drawingRev: string
+  assemblyQuantity: number
+  kitReceivedDate: string
+  dateReleased: string
+  pages: string
+  formId?: string
+  formRev?: string
   sections: MPISection[]
   status: string
   createdAt: string
@@ -62,7 +76,30 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
 
       if (response.ok) {
         const data = await response.json()
-        setMpi(data.mpi)
+        const mpiData = data.mpi
+        
+        // Fetch Docs record to get formId and formRev
+        try {
+          const docsResponse = await fetch(`/api/docs?mpiNo=${mpiData.mpiNumber}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          
+          if (docsResponse.ok) {
+            const docsData = await docsResponse.json()
+            if (docsData.docs && docsData.docs.length > 0) {
+              const doc = docsData.docs[0]
+              mpiData.formId = doc.formId
+              mpiData.formRev = doc.formRev
+            }
+          }
+        } catch (docsError) {
+          console.error('Error fetching Docs:', docsError)
+          // Continue without form data
+        }
+        
+        setMpi(mpiData)
         setLastUpdated(new Date())
       } else {
         toast.error('Failed to fetch MPI')
@@ -76,25 +113,6 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft': return 'bg-yellow-100 text-yellow-800'
-      case 'in-review': return 'bg-blue-100 text-blue-800'
-      case 'approved': return 'bg-green-100 text-green-800'
-      case 'archived': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'draft': return 'Draft'
-      case 'in-review': return 'In Review'
-      case 'approved': return 'Approved'
-      case 'archived': return 'Archived'
-      default: return status
-    }
-  }
 
   const handlePrint = () => {
     window.print()
@@ -122,7 +140,25 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <>
+      {/* Print-specific CSS for page numbering */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            margin: 0.5in;
+            @bottom-center {
+              content: counter(page) " of " counter(pages);
+              font-size: 10pt;
+              color: #666;
+            }
+          }
+          body {
+            counter-reset: page;
+          }
+        }
+      `}</style>
+      
+      <div className="min-h-screen bg-gray-100">
       {/* Print Preview Header - Hidden when printing */}
       <div className="bg-white shadow-sm border-b print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -167,55 +203,75 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
           {/* MPI Header */}
           <div className="text-center mb-8 border-b-2 border-gray-300 pb-6 print:mb-6">
             <h1 className="text-3xl font-bold mb-4 text-gray-900">Manufacturing Process Instructions</h1>
-            <div className="flex items-center justify-center space-x-8 text-lg">
-              <div>
-                <span className="font-semibold">MPI Number:</span> {mpi.mpiNumber}
-              </div>
-              <div>
-                <span className="font-semibold">Version:</span> {mpi.mpiVersion}
-              </div>
-              <div>
-                <span className="font-semibold">Status:</span> 
-                <span className={`ml-2 px-2 py-1 rounded text-sm font-medium ${getStatusColor(mpi.status)}`}>
-                  {getStatusText(mpi.status)}
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Customer Information */}
           <div className="mb-8 border-2 border-gray-300 rounded-lg p-6 print:mb-6 print:rounded-none">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Customer Information</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Assembly Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
               <div>
-                <span className="font-semibold">Customer:</span> {mpi.customerId.customerName}
+                <span className="font-semibold">MPI Number:</span> {mpi.mpiNumber}
               </div>
               <div>
-                <span className="font-semibold">Assembly:</span> {mpi.customerId.assemblyName}
+                <span className="font-semibold">MPI Rev:</span> {mpi.mpiVersion}
               </div>
               <div>
-                <span className="font-semibold">Created:</span> {new Date(mpi.createdAt).toLocaleDateString()}
+                <span className="font-semibold">Job No:</span> {mpi.jobNumber || 'N/A'}
               </div>
               <div>
-                <span className="font-semibold">Last Updated:</span> {new Date(mpi.updatedAt).toLocaleDateString()}
+                <span className="font-semibold">Old Job No:</span> {mpi.oldJobNumber || 'N/A'}
+              </div>
+              <div>
+                <span className="font-semibold">Customer Assembly Rev:</span> {mpi.assemblyRev || 'N/A'}
+              </div>
+              <div>
+                <span className="font-semibold">Customer:</span> {mpi.customerCompanyId.companyName}
+              </div>
+              <div>
+                <span className="font-semibold">Customer Assembly Name:</span> {mpi.customerAssemblyName}
+              </div>
+              <div>
+                <span className="font-semibold">Date Released:</span> {mpi.dateReleased || 'N/A'}
+              </div>
+              <div>
+                <span className="font-semibold">Pages:</span> {mpi.pages || 'N/A'}
+              </div>
+              <div>
+                <span className="font-semibold">Form ID:</span> {mpi.formId || 'N/A'}
+              </div>
+              <div>
+                <span className="font-semibold">Form Rev:</span> {mpi.formRev || 'N/A'}
+              </div>
+              <div>
+                <span className="font-semibold">Kit receive date:</span> {new Date(mpi.kitReceivedDate).toLocaleDateString()}
+              </div>
+              <div>
+                <span className="font-semibold">Kit release date:</span> {mpi.dateReleased || 'N/A'}
               </div>
             </div>
           </div>
 
           {/* Sections */}
           <div className="space-y-6 print:space-y-4">
-            {mpi.sections.map((section, index) => (
+            {mpi.sections.map((section, index) => {
+              console.log('🖨️ Print Preview - Section:', section.title, 'Document ID:', section.documentId)
+              return (
               <div key={section.id} className="border-2 border-gray-300 rounded-lg p-6 break-inside-avoid print:rounded-none print:mb-4">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
-                  {index + 1}. {section.title}
+                <h3 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2 flex justify-between items-center">
+                  <span>{section.title}</span>
+                  {section.documentId && (
+                    <span className="px-3 py-1 bg-blue-100 border border-blue-300 rounded-lg text-blue-800 text-sm font-medium">
+                      {section.documentId}
+                    </span>
+                  )}
                 </h3>
                 
                 {section.content && (
                   <div className="text-gray-900">
-                    <h4 className="font-semibold mb-3 text-lg">Instructions:</h4>
-                    <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 whitespace-pre-wrap print:bg-white print:border-gray-300">
-                      {section.content}
-                    </div>
+                    <div 
+                      className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 print:bg-white print:border-gray-300"
+                      dangerouslySetInnerHTML={{ __html: section.content }}
+                    />
                   </div>
                 )}
 
@@ -238,10 +294,12 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
                   </div>
                 )}
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>
     </div>
+    </>
   )
 }

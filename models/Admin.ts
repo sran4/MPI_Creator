@@ -4,13 +4,6 @@ import bcrypt from 'bcryptjs'
 export interface IAdmin extends Document {
   email: string
   password: string
-  jobNo: string
-  mpiNo: string
-  mpiRev: string
-  docId: string
-  formId: string
-  formRev: string
-  isActive: boolean
   createdAt: Date
   updatedAt: Date
   comparePassword(candidatePassword: string): Promise<boolean>
@@ -28,36 +21,6 @@ const AdminSchema = new Schema<IAdmin>({
     type: String,
     required: [true, 'Password is required'],
     minlength: [8, 'Password must be at least 8 characters'],
-  },
-  jobNo: {
-    type: String,
-    required: [true, 'Job number is required'],
-    unique: true,
-  },
-  mpiNo: {
-    type: String,
-    required: [true, 'MPI number is required'],
-    unique: true,
-  },
-  mpiRev: {
-    type: String,
-    required: [true, 'MPI revision is required'],
-  },
-  docId: {
-    type: String,
-    required: [true, 'Document ID is required'],
-  },
-  formId: {
-    type: String,
-    required: [true, 'Form ID is required'],
-  },
-  formRev: {
-    type: String,
-    required: [true, 'Form revision is required'],
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
   },
 }, {
   timestamps: true,
@@ -81,9 +44,11 @@ AdminSchema.methods.comparePassword = async function (candidatePassword: string)
   return bcrypt.compare(candidatePassword, this.password)
 }
 
-// Index for better performance
-AdminSchema.index({ email: 1 })
-AdminSchema.index({ jobNo: 1 })
-AdminSchema.index({ mpiNo: 1 })
+// Email index is already created by unique: true
 
-export default mongoose.models.Admin || mongoose.model<IAdmin>('Admin', AdminSchema)
+// Clear the model cache to force schema refresh
+if (mongoose.models.Admin) {
+  delete mongoose.models.Admin
+}
+
+export default mongoose.model<IAdmin>('Admin', AdminSchema)

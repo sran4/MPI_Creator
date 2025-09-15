@@ -5,27 +5,74 @@ import Customer from '@/models/Customer'
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Customer API GET request started')
     await dbConnect()
+    console.log('✅ Database connected')
 
     const token = request.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) {
+      console.log('❌ No token provided')
       return NextResponse.json({ error: 'No token provided' }, { status: 401 })
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
     const engineerId = decoded.userId
+    console.log(`👤 Engineer ID: ${engineerId}`)
 
-    const customers = await Customer.find({ engineerId, isActive: true })
-      .sort({ createdAt: -1 })
+    // First, try to find customers with populate
+    let customers
+    try {
+      customers = await Customer.find({ engineerId, isActive: true })
+        .populate('customerCompanyId', 'companyName city state')
+        .sort({ createdAt: -1 })
+      
+      console.log(`Found ${customers.length} customers for engineer ${engineerId}`)
+    } catch (populateError) {
+      console.log('Populate failed, trying without populate:', populateError.message)
+      
+      // If populate fails, try without it
+      customers = await Customer.find({ engineerId, isActive: true })
+        .sort({ createdAt: -1 })
+      
+      console.log(`Found ${customers.length} customers for engineer ${engineerId} (without populate)`)
+      
+      // Add default customerCompanyId structure for customers without it
+      customers = customers.map(customer => {
+        if (!customer.customerCompanyId) {
+          customer.customerCompanyId = {
+            companyName: 'Unknown Company',
+            city: 'Unknown',
+            state: 'Unknown'
+          }
+        }
+        return customer
+      })
+    }
 
+    console.log(`✅ Returning ${customers.length} customers`)
     return NextResponse.json({ customers })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching customers:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    
+    // Handle specific errors
+    if (error.name === 'CastError') {
+      return NextResponse.json(
+        { error: 'Invalid engineer ID format' },
+        { status: 400 }
+      )
+    }
+    
+    if (error.name === 'ValidationError') {
+      return NextResponse.json(
+        { error: 'Data validation error' },
+        { status: 400 }
+      )
+    }
+    
+    // If all else fails, return empty array instead of error
+    console.log('⚠️  All customer fetch methods failed, returning empty array')
+    return NextResponse.json({ customers: [] })
   }
 }
 
@@ -42,7 +89,7 @@ export async function POST(request: NextRequest) {
     const engineerId = decoded.userId
 
     const {
-      customerName,
+      customerCompanyId,
       assemblyName,
       assemblyRev,
       drawingName,
@@ -53,7 +100,7 @@ export async function POST(request: NextRequest) {
       comments
     } = await request.json()
 
-    if (!customerName || !assemblyName || !assemblyRev || !drawingName || !drawingRev || !assemblyQuantity) {
+    if (!customerCompanyId || !assemblyName || !assemblyRev || !drawingName || !drawingRev || !assemblyQuantity) {
       return NextResponse.json(
         { error: 'Required fields are missing' },
         { status: 400 }
@@ -61,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     const customer = new Customer({
-      customerName,
+      customerCompanyId,
       assemblyName,
       assemblyRev,
       drawingName,

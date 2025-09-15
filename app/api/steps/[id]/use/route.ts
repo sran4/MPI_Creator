@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import dbConnect from '@/lib/mongodb'
-import GlobalSteps from '@/models/GlobalSteps'
+import Task from '@/models/Task'
 
 export async function POST(
   request: NextRequest,
@@ -20,7 +20,7 @@ export async function POST(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    const step = await GlobalSteps.findById(params.id)
+    const step = await Task.findById(params.id)
     if (!step) {
       return NextResponse.json({ error: 'Step not found' }, { status: 404 })
     }

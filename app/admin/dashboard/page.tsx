@@ -5,39 +5,43 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { 
   Users, 
   FileText, 
   Settings, 
-  BarChart3, 
-  Plus,
-  Eye,
-  Edit,
-  Trash2,
+  Plus, 
   Search,
-  Filter,
-  Shield,
-  UserCheck,
-  UserX
+  Database,
+  Folder,
+  Trash2,
+  Edit,
+  ArrowLeft,
+  User,
+  Mail,
+  Calendar,
+  Activity,
+  File,
+  Building
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Link from 'next/link'
 
 interface Engineer {
   _id: string
   fullName: string
   email: string
-  title: string
+  employeeId: string
+  department: string
   isActive: boolean
   createdAt: string
 }
 
-interface GlobalStep {
+interface Task {
   _id: string
-  title: string
-  content: string
-  category: string
-  section: string
+  step: string
+  categoryName: string
   usageCount: number
   isActive: boolean
   createdAt: string
@@ -46,37 +50,51 @@ interface GlobalStep {
 interface Admin {
   _id: string
   email: string
-  jobNo: string
-  mpiNo: string
-  mpiRev: string
-  docId: string
-  formId: string
-  formRev: string
 }
 
 export default function AdminDashboard() {
   const [admin, setAdmin] = useState<Admin | null>(null)
   const [engineers, setEngineers] = useState<Engineer[]>([])
-  const [globalSteps, setGlobalSteps] = useState<GlobalStep[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeTab, setActiveTab] = useState<'engineers' | 'steps'>('engineers')
+  const [activeTab, setActiveTab] = useState<'engineers' | 'tasks'>('engineers')
   const router = useRouter()
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    const userData = localStorage.getItem('user')
-    const userType = localStorage.getItem('userType')
-    
-    if (!token || !userData || userType !== 'admin') {
+    if (!token) {
       router.push('/login')
       return
     }
 
-    setAdmin(JSON.parse(userData))
+    fetchAdminData()
     fetchEngineers()
-    fetchGlobalSteps()
+    fetchTasks()
   }, [router])
+
+  const fetchAdminData = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setAdmin(result.user)
+      } else {
+        toast.error('Failed to fetch admin data')
+        router.push('/login')
+      }
+    } catch (error) {
+      console.error('Error fetching admin data:', error)
+      toast.error('An error occurred while fetching admin data')
+      router.push('/login')
+    }
+  }
 
   const fetchEngineers = async () => {
     try {
@@ -88,18 +106,17 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        setEngineers(data.engineers || [])
+        const result = await response.json()
+        setEngineers(result.engineers)
       } else {
-        toast.error('Failed to fetch engineers')
+        console.error('Failed to fetch engineers')
       }
     } catch (error) {
       console.error('Error fetching engineers:', error)
-      toast.error('Error loading engineers')
     }
   }
 
-  const fetchGlobalSteps = async () => {
+  const fetchTasks = async () => {
     try {
       const token = localStorage.getItem('token')
       const response = await fetch('/api/admin/steps', {
@@ -109,368 +126,366 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        setGlobalSteps(data.steps || [])
+        const result = await response.json()
+        setTasks(result.steps)
       } else {
-        toast.error('Failed to fetch global steps')
+        console.error('Failed to fetch tasks')
       }
     } catch (error) {
-      console.error('Error fetching global steps:', error)
-      toast.error('Error loading global steps')
+      console.error('Error fetching tasks:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleToggleEngineerStatus = async (engineerId: string, currentStatus: boolean) => {
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(`/api/admin/engineers/${engineerId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ isActive: !currentStatus }),
-      })
-
-      if (response.ok) {
-        toast.success(`Engineer ${!currentStatus ? 'activated' : 'deactivated'} successfully`)
-        fetchEngineers()
-      } else {
-        toast.error('Failed to update engineer status')
-      }
-    } catch (error) {
-      console.error('Error updating engineer status:', error)
-      toast.error('Error updating engineer status')
-    }
-  }
-
-  const handleDeleteStep = async (stepId: string) => {
-    if (!confirm('Are you sure you want to delete this global step?')) return
-
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(`/api/admin/steps/${stepId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        toast.success('Global step deleted successfully')
-        fetchGlobalSteps()
-      } else {
-        toast.error('Failed to delete global step')
-      }
-    } catch (error) {
-      console.error('Error deleting global step:', error)
-      toast.error('Error deleting global step')
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    router.push('/login')
   }
 
   const filteredEngineers = engineers.filter(engineer =>
     engineer.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     engineer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    engineer.title.toLowerCase().includes(searchTerm.toLowerCase())
+    engineer.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    engineer.department.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const filteredSteps = globalSteps.filter(step =>
-    step.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    step.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    step.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    step.section.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTasks = tasks.filter(task =>
+    task.step.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    task.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   if (isLoading) {
     return (
-      <div className="min-h-screen gradient-bg dark:gradient-bg flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading dashboard...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen gradient-bg dark:gradient-bg">
-      {/* Floating Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-white opacity-5 rounded-full floating"></div>
-        <div className="absolute top-40 right-32 w-24 h-24 bg-white opacity-5 rounded-full floating" style={{animationDelay: '-2s'}}></div>
-        <div className="absolute bottom-32 left-40 w-40 h-40 bg-white opacity-5 rounded-full floating" style={{animationDelay: '-4s'}}></div>
-        <div className="absolute bottom-20 right-20 w-28 h-28 bg-white opacity-5 rounded-full floating" style={{animationDelay: '-1s'}}></div>
-      </div>
-
-      {/* Header */}
-      <header className="glassmorphism p-6 mb-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-              <p className="text-white opacity-80">System Administration & Management</p>
+              <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+              <p className="text-white/70 mt-1">Welcome back, {admin?.email}</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-white">
-                <Shield className="h-5 w-5" />
-                <span>Administrator</span>
-              </div>
-              <Button 
-                onClick={() => router.push('/admin/engineers/new')}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="bg-blue-600 hover:bg-blue-70  text-white hover:bg-white/10"
+            >
+              Logout
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white/70">
+                  Total Engineers
+                </CardTitle>
+                <Users className="h-4 w-4 text-blue-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">{engineers.length}</div>
+                <p className="text-xs text-white/60">
+                  {engineers.filter(e => e.isActive).length} active
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white/70">
+                  Tasks
+                </CardTitle>
+                <FileText className="h-4 w-4 text-green-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">{tasks.length}</div>
+                <p className="text-xs text-white/60">
+                  {tasks.filter(s => s.isActive).length} active
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white/70">
+                  System Status
+                </CardTitle>
+                <Activity className="h-4 w-4 text-green-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">Online</div>
+                <p className="text-xs text-white/60">
+                  All systems operational
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Link href="/admin/engineers/new">
+              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Engineer
               </Button>
-            </div>
+            </Link>
+            <Link href="/admin/steps">
+              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                <FileText className="h-4 w-4 mr-2" />
+                Manage Tasks
+              </Button>
+            </Link>
+            <Link href="/admin/categories">
+              <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                <Folder className="h-4 w-4 mr-2" />
+                Manage Process Items
+              </Button>
+            </Link>
+            <Link href="/admin/docs">
+              <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+                <File className="h-4 w-4 mr-2" />
+                Manage Docs
+              </Button>
+            </Link>
+            <Link href="/admin/forms">
+              <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                <FileText className="h-4 w-4 mr-2" />
+                Manage Forms
+              </Button>
+            </Link>
+            <Link href="/admin/document-ids">
+              <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                <FileText className="h-4 w-4 mr-2" />
+                Manage Document IDs
+              </Button>
+            </Link>
+            <Link href="/admin/customer-companies">
+              <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white">
+                <Building className="h-4 w-4 mr-2" />
+                Manage Customer Companies
+              </Button>
+            </Link>
+            <Link href="/admin/test-models">
+              <Button className="w-full bg-gray-600 hover:bg-gray-700 text-white">
+                <Database className="h-4 w-4 mr-2" />
+                Test Models
+              </Button>
+            </Link>
           </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 pb-8">
-        {/* Stats Cards */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-        >
-          <Card className="glassmorphism border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white opacity-80 text-sm">Total Engineers</p>
-                  <p className="text-2xl font-bold text-white">{engineers.length}</p>
-                </div>
-                <Users className="h-8 w-8 text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glassmorphism border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white opacity-80 text-sm">Active Engineers</p>
-                  <p className="text-2xl font-bold text-white">
-                    {engineers.filter(e => e.isActive).length}
-                  </p>
-                </div>
-                <UserCheck className="h-8 w-8 text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glassmorphism border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white opacity-80 text-sm">Global Steps</p>
-                  <p className="text-2xl font-bold text-white">{globalSteps.length}</p>
-                </div>
-                <FileText className="h-8 w-8 text-purple-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glassmorphism border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white opacity-80 text-sm">Total Usage</p>
-                  <p className="text-2xl font-bold text-white">
-                    {globalSteps.reduce((sum, step) => sum + step.usageCount, 0)}
-                  </p>
-                </div>
-                <BarChart3 className="h-8 w-8 text-orange-400" />
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
 
         {/* Tabs */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="glassmorphism rounded-xl p-6 mb-8"
-        >
-          <div className="flex space-x-1 mb-6">
-            <Button
-              variant={activeTab === 'engineers' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('engineers')}
-              className={activeTab === 'engineers' ? 'bg-blue-600 text-white' : 'text-white hover:bg-white/20'}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Engineers ({engineers.length})
-            </Button>
-            <Button
-              variant={activeTab === 'steps' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('steps')}
-              className={activeTab === 'steps' ? 'bg-blue-600 text-white' : 'text-white hover:bg-white/20'}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Global Steps ({globalSteps.length})
-            </Button>
-          </div>
+        <div className="flex space-x-1 mb-6">
+          <Button
+            variant={activeTab === 'engineers' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('engineers')}
+            className={activeTab === 'engineers' 
+              ? 'bg-blue-600 text-white' 
+              : 'text-white hover:bg-white/10'
+            }
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Engineers ({engineers.length})
+          </Button>
+          <Button
+            variant={activeTab === 'tasks' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('tasks')}
+            className={activeTab === 'tasks' 
+              ? 'bg-blue-600 text-white' 
+              : 'text-white hover:bg-white/10'
+            }
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Tasks ({tasks.length})
+          </Button>
+        </div>
 
-          {/* Search */}
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white opacity-60" />
-                <input
-                  type="text"
-                  placeholder={`Search ${activeTab}...`}
-                  className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
+        {/* Search */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
+            <Input
+              type="text"
+              placeholder={`Search ${activeTab}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
+            />
           </div>
+        </div>
 
-          {/* Content */}
-          {activeTab === 'engineers' ? (
-            <div className="space-y-4">
-              {filteredEngineers.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-16 w-16 text-white opacity-40 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">No Engineers Found</h3>
-                  <p className="text-white opacity-80 mb-6">
-                    {searchTerm ? 'No engineers match your search criteria.' : 'No engineers have been added yet.'}
-                  </p>
-                  <Button 
-                    onClick={() => router.push('/admin/engineers/new')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add First Engineer
-                  </Button>
-                </div>
-              ) : (
-                filteredEngineers.map((engineer, index) => (
-                  <motion.div
-                    key={engineer._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                  >
-                    <Card className="glassmorphism border-white/20 hover:bg-white/10 transition-all duration-300">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-4 mb-2">
-                              <h3 className="text-xl font-semibold text-white">
-                                {engineer.fullName}
-                              </h3>
-                              <Badge className={engineer.isActive ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>
-                                {engineer.isActive ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white opacity-80">
-                              <div>
-                                <p><strong>Email:</strong> {engineer.email}</p>
-                                <p><strong>Title:</strong> {engineer.title}</p>
-                              </div>
-                              <div className="text-sm">
-                                <p><strong>Joined:</strong> {new Date(engineer.createdAt).toLocaleDateString()}</p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleToggleEngineerStatus(engineer._id, engineer.isActive)}
-                              className={engineer.isActive ? 'text-red-400 hover:bg-red-400/20' : 'text-green-400 hover:bg-green-400/20'}
-                            >
-                              {engineer.isActive ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
-                            </Button>
-                          </div>
+        {/* Content */}
+        {activeTab === 'engineers' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredEngineers.map((engineer, index) => (
+              <motion.div
+                key={engineer._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-white text-lg flex items-center">
+                          <User className="h-5 w-5 mr-2 text-blue-400" />
+                          {engineer.fullName}
+                        </CardTitle>
+                        <div className="flex items-center mt-2">
+                          <Mail className="h-4 w-4 mr-1 text-white/60" />
+                          <span className="text-white/70 text-sm">{engineer.email}</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredSteps.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className="h-16 w-16 text-white opacity-40 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">No Global Steps Found</h3>
-                  <p className="text-white opacity-80 mb-6">
-                    {searchTerm ? 'No steps match your search criteria.' : 'No global steps have been created yet.'}
-                  </p>
-                  <Button 
-                    onClick={() => router.push('/admin/steps/new')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create First Step
-                  </Button>
-                </div>
-              ) : (
-                filteredSteps.map((step, index) => (
-                  <motion.div
-                    key={step._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                  >
-                    <Card className="glassmorphism border-white/20 hover:bg-white/10 transition-all duration-300">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-4 mb-2">
-                              <h3 className="text-xl font-semibold text-white">
-                                {step.title}
-                              </h3>
-                              <Badge className="bg-blue-500 text-white">
-                                {step.category}
-                              </Badge>
-                              <Badge className="bg-purple-500 text-white">
-                                {step.section}
-                              </Badge>
-                            </div>
-                            <p className="text-white opacity-80 mb-2">
-                              {step.content.length > 150 ? `${step.content.substring(0, 150)}...` : step.content}
-                            </p>
-                            <div className="flex items-center space-x-4 text-white opacity-60 text-sm">
-                              <span>Usage: {step.usageCount}</span>
-                              <span>Created: {new Date(step.createdAt).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => router.push(`/admin/steps/${step._id}/edit`)}
-                              className="text-white hover:bg-white/20"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteStep(step._id)}
-                              className="text-red-400 hover:bg-red-400/20"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                      </div>
+                      <Badge 
+                        variant={engineer.isActive ? "default" : "secondary"}
+                        className={engineer.isActive 
+                          ? "bg-green-600 text-white" 
+                          : "bg-gray-600 text-white"
+                        }
+                      >
+                        {engineer.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center text-white/70">
+                        <span className="font-medium mr-2">ID:</span>
+                        <span>{engineer.employeeId}</span>
+                      </div>
+                      <div className="flex items-center text-white/70">
+                        <span className="font-medium mr-2">Dept:</span>
+                        <span>{engineer.department}</span>
+                      </div>
+                      <div className="flex items-center text-white/70">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        <span>Joined {new Date(engineer.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTasks.map((task, index) => (
+              <motion.div
+                key={task._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-white text-lg flex items-center">
+                          <FileText className="h-5 w-5 mr-2 text-green-400" />
+                          Task
+                        </CardTitle>
+                        <div className="flex items-center mt-2">
+                          <Folder className="h-4 w-4 mr-1 text-white/60" />
+                          <span className="text-white/70 text-sm">{task.categoryName}</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          )}
-        </motion.div>
-      </main>
+                      </div>
+                      <Badge 
+                        variant={task.isActive ? "default" : "secondary"}
+                        className={task.isActive 
+                          ? "bg-green-600 text-white" 
+                          : "bg-gray-600 text-white"
+                        }
+                      >
+                        {task.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <p className="text-white/80 text-sm mb-4 line-clamp-3">
+                      {task.step}
+                    </p>
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center text-white/70">
+                        <Users className="h-4 w-4 mr-1" />
+                        {task.usageCount} uses
+                      </div>
+                      <div className="flex items-center text-white/70">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        {new Date(task.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {((activeTab === 'engineers' && filteredEngineers.length === 0) || 
+          (activeTab === 'tasks' && filteredTasks.length === 0)) && (
+          <div className="text-center py-12">
+            {activeTab === 'engineers' ? (
+              <>
+                <Users className="h-16 w-16 text-white/30 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white/70 mb-2">No Engineers Found</h3>
+                <p className="text-white/50 mb-6">Get started by adding your first engineer</p>
+                <Link href="/admin/engineers/new">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Engineer
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <FileText className="h-16 w-16 text-white/30 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white/70 mb-2">No Tasks Found</h3>
+                <p className="text-white/50 mb-6">Get started by creating your first task</p>
+                <Link href="/admin/steps">
+                  <Button className="bg-green-600 hover:bg-green-700 text-white">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Manage Tasks
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

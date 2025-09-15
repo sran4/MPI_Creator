@@ -20,7 +20,8 @@ import {
   Download,
   Calendar,
   User,
-  Building
+  Building,
+  Printer
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -29,10 +30,19 @@ interface MPI {
   _id: string
   mpiNumber: string
   mpiVersion: string
-  customerId: {
-    customerName: string
-    assemblyName: string
+  customerCompanyId: {
+    companyName: string
+    city: string
+    state: string
   }
+  customerAssemblyName: string
+  assemblyRev: string
+  drawingName: string
+  drawingRev: string
+  assemblyQuantity: number
+  kitReceivedDate: string
+  dateReleased: string
+  pages: string
   status: 'draft' | 'in-review' | 'approved' | 'archived'
   createdAt: string
   updatedAt: string
@@ -47,7 +57,11 @@ interface User {
 
 interface Customer {
   _id: string
-  customerName: string
+  customerCompanyId: {
+    companyName: string
+    city: string
+    state: string
+  }
   assemblyName: string
   assemblyRev: string
   drawingName: string
@@ -86,6 +100,12 @@ export default function EngineerDashboard() {
   const fetchMPIs = async () => {
     try {
       const token = localStorage.getItem('token')
+      if (!token) {
+        toast.error('No authentication token found. Please log in again.')
+        router.push('/login')
+        return
+      }
+
       const response = await fetch('/api/mpi', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -95,12 +115,15 @@ export default function EngineerDashboard() {
       if (response.ok) {
         const data = await response.json()
         setMpis(data.mpis || [])
+        console.log('Successfully fetched MPIs:', data.mpis?.length || 0)
       } else {
-        toast.error('Failed to fetch MPIs')
+        const errorData = await response.json()
+        console.error('API Error:', errorData)
+        toast.error(`Failed to fetch MPIs: ${errorData.error || 'Unknown error'}`)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching MPIs:', error)
-      toast.error('Error loading MPIs')
+      toast.error(`Error loading MPIs: ${error.message}`)
     }
   }
 
@@ -116,12 +139,15 @@ export default function EngineerDashboard() {
       if (response.ok) {
         const data = await response.json()
         setCustomers(data.customers || [])
+        console.log('Successfully fetched customers:', data.customers?.length || 0)
       } else {
-        toast.error('Failed to fetch customers')
+        const errorData = await response.json()
+        console.error('Customer fetch failed:', errorData)
+        toast.error(`Failed to fetch customers: ${errorData.error || 'Unknown error'}`)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching customers:', error)
-      toast.error('Error loading customers')
+      toast.error(`Error loading customers: ${error.message}`)
     } finally {
       setIsLoading(false)
     }
@@ -153,8 +179,8 @@ export default function EngineerDashboard() {
 
   const filteredMPIs = mpis.filter(mpi => {
     const matchesSearch = mpi.mpiNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         mpi.customerId.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         mpi.customerId.assemblyName.toLowerCase().includes(searchTerm.toLowerCase())
+                         mpi.customerCompanyId.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         mpi.customerAssemblyName.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === 'all' || mpi.status === statusFilter
     
@@ -162,7 +188,7 @@ export default function EngineerDashboard() {
   })
 
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = customer.customerCompanyId?.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.assemblyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.drawingName.toLowerCase().includes(searchTerm.toLowerCase())
     
@@ -416,12 +442,12 @@ export default function EngineerDashboard() {
                             <Badge className={`${getStatusColor(mpi.status)} text-white`}>
                               {getStatusText(mpi.status)}
                             </Badge>
-                            <span className="text-white opacity-60">v{mpi.mpiVersion}</span>
+                            <span className="text-white opacity-60">{mpi.mpiVersion}</span>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white opacity-80">
                             <div>
-                              <p className="font-medium">Customer: {mpi.customerId.customerName}</p>
-                              <p>Assembly: {mpi.customerId.assemblyName}</p>
+                              <p className="font-medium">Customer: {mpi.customerCompanyId.companyName}</p>
+                              <p>Assembly: {mpi.customerAssemblyName}</p>
                             </div>
                             <div className="flex items-center space-x-4 text-sm">
                               <div className="flex items-center space-x-1">
@@ -441,14 +467,25 @@ export default function EngineerDashboard() {
                           size="icon"
                           onClick={() => router.push(`/mpi/view?id=${mpi._id}`)}
                           className="text-white hover:bg-white/20"
+                          title="View MPI"
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => router.push(`/mpi/${mpi._id}/print-preview`)}
+                          className="text-white hover:bg-white/20"
+                          title="Print Preview"
+                        >
+                          <Printer className="h-4 w-4" />
                         </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => router.push(`/mpi/${mpi._id}/edit`)}
                             className="text-white hover:bg-white/20"
+                            title="Edit MPI"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -457,6 +494,7 @@ export default function EngineerDashboard() {
                             size="icon"
                             onClick={() => handleDeleteMPI(mpi._id)}
                             className="text-red-400 hover:bg-red-400/20"
+                            title="Delete MPI"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -502,7 +540,7 @@ export default function EngineerDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center space-x-4 mb-2">
                             <h3 className="text-xl font-semibold text-white">
-                              {customer.customerName}
+                              {customer.customerCompanyId?.companyName || 'Unknown Company'}
                             </h3>
                             <Badge className="bg-green-500 text-white">
                               {customer.assemblyQuantity} units
@@ -530,7 +568,7 @@ export default function EngineerDashboard() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => router.push(`/mpi/new?customerId=${customer._id}`)}
+                            onClick={() => router.push('/mpi/new')}
                             className="text-blue-400 hover:bg-blue-400/20"
                             title="Create MPI for this customer"
                           >

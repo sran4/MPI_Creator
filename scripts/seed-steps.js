@@ -1,61 +1,26 @@
 const mongoose = require('mongoose')
-require('dotenv').config()
+require('dotenv').config({ path: '.env.local' })
 
-// Define the GlobalSteps schema inline to avoid module issues
-const GlobalStepsSchema = new mongoose.Schema({
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/mpi-creator')
+
+// Define the schemas inline since we can't import TypeScript models in JS
+const StepSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Title is required'],
+    required: true,
     trim: true,
-    maxlength: [200, 'Title cannot exceed 200 characters'],
+    maxlength: 200,
   },
   content: {
     type: String,
-    required: [true, 'Content is required'],
+    required: true,
     trim: true,
   },
-  category: {
-    type: String,
-    required: [true, 'Category is required'],
-    enum: [
-      'Kitting',
-      'SMT Single Side',
-      'SMT Double Side',
-      '2nd Operations',
-      'Through Hole',
-      'Wash',
-      'Test',
-      'AOI',
-      'Final QC',
-      'Packaging',
-      'General',
-      'Other'
-    ],
-  },
-  section: {
-    type: String,
-    required: [true, 'Section is required'],
-    trim: true,
-    maxlength: [100, 'Section name cannot exceed 100 characters'],
-  },
-  isGlobal: {
-    type: Boolean,
-    default: true,
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    refPath: 'createdByModel',
-    required: [true, 'Created by is required'],
-  },
-  createdByModel: {
-    type: String,
-    enum: ['Engineer', 'Admin'],
-    required: [true, 'Created by model is required'],
-  },
-  usageCount: {
+  order: {
     type: Number,
-    default: 0,
-    min: [0, 'Usage count cannot be negative'],
+    required: true,
+    min: 0,
   },
   isActive: {
     type: Boolean,
@@ -65,156 +30,130 @@ const GlobalStepsSchema = new mongoose.Schema({
   timestamps: true,
 })
 
-const GlobalSteps = mongoose.models.GlobalSteps || mongoose.model('GlobalSteps', GlobalStepsSchema)
+const StepCategorySchema = new mongoose.Schema({
+  categoryName: {
+    type: String,
+    required: true,
+    trim: true,
+    unique: true,
+    maxlength: 100,
+  },
+  steps: [StepSchema],
+  isGlobal: {
+    type: Boolean,
+    default: true,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    refPath: 'createdByModel',
+    required: true,
+  },
+  createdByModel: {
+    type: String,
+    enum: ['Engineer', 'Admin'],
+    required: true,
+  },
+  usageCount: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+}, {
+  timestamps: true,
+})
 
-// Default steps to seed
-const defaultSteps = [
+const StepCategory = mongoose.model('StepCategory', StepCategorySchema)
+
+// Sample categories with steps
+const sampleCategories = [
   {
-    title: 'Verify BOM against components received',
-    content: '1. Compare Bill of Materials (BOM) with components received\n2. Check component part numbers and quantities\n3. Verify component specifications and tolerances\n4. Document any discrepancies or missing components\n5. Update inventory records',
-    category: 'Kitting',
-    section: 'Kit Release',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
+    categoryName: 'Applicable Documents',
+    steps: [
+      {
+        title: 'Engineering Drawings Review',
+        content: 'Review all engineering drawings for the assembly. Verify part numbers, dimensions, and specifications. Check for any revisions or updates. Ensure all required drawings are present and legible. Contact engineering if any discrepancies are found.',
+        order: 1,
+        isActive: true
+      },
+      {
+        title: 'Bill of Materials Check',
+        content: 'Verify all components against the bill of materials. Check for correct part numbers and quantities. Inspect components for damage or defects. Ensure all components are properly labeled and stored. Report any missing or damaged components immediately.',
+        order: 2,
+        isActive: true
+      }
+    ],
+    createdBy: new mongoose.Types.ObjectId(),
+    createdByModel: 'Admin'
   },
   {
-    title: 'SMT Component Placement Verification',
-    content: '1. Verify component placement according to assembly drawing\n2. Check component orientation and polarity\n3. Ensure proper component spacing and alignment\n4. Verify component values and specifications\n5. Document any placement issues',
-    category: 'SMT Single Side',
-    section: 'SMT Preparation',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
+    categoryName: 'General Instructions',
+    steps: [
+      {
+        title: 'Safety Protocol',
+        content: 'Follow all safety protocols and wear appropriate personal protective equipment. Ensure work area is clean and well-lit. Report any safety concerns immediately. Use proper lifting techniques for heavy components. Keep emergency exits clear at all times.',
+        order: 1,
+        isActive: true
+      },
+      {
+        title: 'Work Area Setup',
+        content: 'Ensure work area is clean and well-lit. Keep emergency exits clear. Organize tools and materials for easy access. Check that all safety equipment is in place and functional. Verify that all required documentation is available.',
+        order: 2,
+        isActive: true
+      }
+    ],
+    createdBy: new mongoose.Types.ObjectId(),
+    createdByModel: 'Admin'
   },
   {
-    title: 'Reflow Profile Setup',
-    content: '1. Set up reflow oven according to component specifications\n2. Configure temperature profile for lead-free solder\n3. Set conveyor speed and zone temperatures\n4. Verify profile meets component requirements\n5. Document profile settings and test results',
-    category: 'SMT Single Side',
-    section: 'SMT Reflow',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
-  },
-  {
-    title: 'First Article Inspection',
-    content: '1. Perform visual inspection of first assembled unit\n2. Check solder joint quality and component placement\n3. Verify electrical connectivity and functionality\n4. Document inspection results and any issues\n5. Obtain approval before proceeding with production',
-    category: 'SMT Single Side',
-    section: 'SMT First Article',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
-  },
-  {
-    title: 'Through-Hole Component Installation',
-    content: '1. Install through-hole components according to assembly drawing\n2. Verify component orientation and placement\n3. Ensure proper lead trimming and forming\n4. Check component height and clearance requirements\n5. Document installation process and any issues',
-    category: '2nd Operations',
-    section: '2nd Operations',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
-  },
-  {
-    title: 'Board Cleaning Process',
-    content: '1. Remove flux residue using appropriate cleaning solution\n2. Follow cleaning procedure for lead-free solder\n3. Verify cleaning effectiveness and board cleanliness\n4. Check for any remaining contaminants\n5. Document cleaning process and results',
-    category: 'Wash',
-    section: 'Wash',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
-  },
-  {
-    title: 'Functional Testing',
-    content: '1. Perform electrical testing according to test procedures\n2. Verify all functions operate as specified\n3. Check voltage levels and current consumption\n4. Test communication interfaces and protocols\n5. Document test results and any failures',
-    category: 'Test',
-    section: 'Test Section',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
-    isActive: true,
-  },
-  {
-    title: 'Automated Optical Inspection',
-    content: '1. Set up AOI system for board inspection\n2. Configure inspection parameters and tolerances\n3. Run automated inspection on all boards\n4. Review and analyze inspection results\n5. Document any defects or issues found',
-    category: 'AOI',
-    section: 'AOI',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
-  },
-  {
-    title: 'Final Quality Control',
-    content: '1. Perform final visual inspection of completed assembly\n2. Verify all components are properly installed\n3. Check for any physical damage or defects\n4. Verify labeling and marking requirements\n5. Document final inspection results',
-    category: 'Final QC',
-    section: 'Final QC',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
-  },
-  {
-    title: 'Packaging and Shipping',
-    content: '1. Package assemblies according to customer requirements\n2. Use appropriate ESD protection and materials\n3. Apply shipping labels and documentation\n4. Verify package contents and quantities\n5. Prepare shipping documentation and tracking',
-    category: 'Packaging',
-    section: 'Ship and Delivery',
-    isGlobal: true,
-    usageCount: 0,
-    isActive: true,
+    categoryName: 'Kit Release',
+    steps: [
+      {
+        title: 'Component Verification',
+        content: 'Verify all components against the bill of materials. Check for correct part numbers and quantities. Inspect components for damage or defects. Ensure all components are properly labeled and stored. Report any missing or damaged components immediately.',
+        order: 1,
+        isActive: true
+      },
+      {
+        title: 'Component Inspection',
+        content: 'Inspect components for damage or defects. Check for proper labeling and packaging. Verify component specifications match requirements. Document any issues found during inspection. Ensure components are stored in appropriate conditions.',
+        order: 2,
+        isActive: true
+      }
+    ],
+    createdBy: new mongoose.Types.ObjectId(),
+    createdByModel: 'Admin'
   }
 ]
 
 async function seedSteps() {
   try {
-    // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI)
-    console.log('Connected to MongoDB')
-
-    // Clear existing steps (optional - remove this if you want to keep existing steps)
-    await GlobalSteps.deleteMany({})
-    console.log('Cleared existing steps')
-
-    // Find an existing admin user to use as the creator
-    const AdminSchema = new mongoose.Schema({
-      email: { type: String, required: true, unique: true },
-      password: { type: String, required: true },
-      jobNo: { type: String },
-      mpiNo: { type: String },
-      mpiRev: { type: String },
-      docId: { type: String },
-      formId: { type: String },
-      formRev: { type: String }
-    }, { timestamps: true })
-
-    const Admin = mongoose.models.Admin || mongoose.model('Admin', AdminSchema)
+    console.log('🚀 Starting step categories seeding...')
     
-    let adminUser = await Admin.findOne({ email: 'admin@mpi.com' })
-    if (!adminUser) {
-      console.log('No admin user found. Please run npm run seed-admin first.')
-      return
-    }
-
-    // Add createdBy and createdByModel to each step
-    const stepsWithCreator = defaultSteps.map(step => ({
-      ...step,
-      createdBy: adminUser._id,
-      createdByModel: 'Admin'
-    }))
-
-    // Insert default steps
-    const steps = await GlobalSteps.insertMany(stepsWithCreator)
-    console.log(`Successfully seeded ${steps.length} default steps`)
-
-    // List the created steps
-    steps.forEach((step, index) => {
-      console.log(`${index + 1}. ${step.title} (${step.category})`)
+    // Clear existing categories
+    await StepCategory.deleteMany({})
+    console.log('✅ Cleared existing step categories')
+    
+    // Insert new categories
+    const categories = await StepCategory.insertMany(sampleCategories)
+    console.log(`✅ Successfully seeded ${categories.length} step categories`)
+    
+    // List the created categories
+    categories.forEach((category, index) => {
+      console.log(`${index + 1}. ${category.categoryName} (${category.steps.length} steps)`)
     })
-
+    
+    console.log('🎉 Step categories seeding completed successfully!')
+    
   } catch (error) {
-    console.error('Error seeding steps:', error)
+    console.error('❌ Error seeding step categories:', error)
   } finally {
-    await mongoose.disconnect()
-    console.log('Disconnected from MongoDB')
+    mongoose.connection.close()
+    console.log('🔌 Database connection closed')
   }
 }
 
-// Run the seed function
 seedSteps()

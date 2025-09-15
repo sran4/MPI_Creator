@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import dbConnect from '@/lib/mongodb'
-import GlobalSteps from '@/models/GlobalSteps'
+import Task from '@/models/Task'
 import Engineer from '@/models/Engineer'
 import Admin from '@/models/Admin'
 
@@ -19,13 +19,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    const steps = await GlobalSteps.find({ isActive: true })
+    const steps = await Task.find({ isActive: true })
       .sort({ createdAt: -1 })
 
     return NextResponse.json({ steps })
 
   } catch (error) {
-    console.error('Error fetching global steps:', error)
+    console.error('Error fetching tasks:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -56,12 +56,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new global step
-    const step = new GlobalSteps({
-      title,
-      content,
-      category,
-      section,
+    // Create new task
+    const step = new Task({
+      step: `${title}: ${content}`, // Combine title and content into step field
+      categoryName: category,
       isGlobal: true,
       createdBy: decoded.userId, // User creating the step (admin or engineer)
       createdByModel: decoded.userType === 'admin' ? 'Admin' : 'Engineer',
@@ -75,7 +73,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error: any) {
-    console.error('Error creating global step:', error)
+    console.error('Error creating task:', error)
     
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map((err: any) => err.message)

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     let userModel = null
 
     if (userType === 'admin') {
-      user = await Admin.findOne({ email, isActive: true })
+      user = await Admin.findOne({ email })
       userModel = Admin
     } else if (userType === 'engineer') {
       user = await Engineer.findOne({ email, isActive: true })
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         userId: user._id, 
         email: user.email, 
         userType,
-        fullName: user.fullName || 'Admin'
+        fullName: user.fullName || (userType === 'admin' ? 'Admin' : user.fullName)
       },
       process.env.JWT_SECRET!,
       { expiresIn: '30d' }

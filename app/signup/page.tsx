@@ -277,6 +277,15 @@ export default function SignupPage() {
                 </Link>
               </p>
             </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-white opacity-60 text-sm">
+                Need admin access?{' '}
+                <Link href="/admin/signup" className="text-red-400 hover:text-red-300 underline">
+                  Admin Signup
+                </Link>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </motion.div>

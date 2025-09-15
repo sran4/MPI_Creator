@@ -64,8 +64,7 @@ EngineerSchema.methods.comparePassword = async function (candidatePassword: stri
   return bcrypt.compare(candidatePassword, this.password)
 }
 
-// Index for better performance
-EngineerSchema.index({ email: 1 })
+// Index for better performance (email index is already created by unique: true)
 EngineerSchema.index({ fullName: 1 })
 EngineerSchema.index({ isActive: 1 })
 
