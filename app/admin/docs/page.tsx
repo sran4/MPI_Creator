@@ -363,11 +363,11 @@ export default function DocsPage() {
 
         {/* Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-red-900/50 flex items-center justify-center z-50 p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              className="glassmorphism-card rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">
@@ -439,9 +439,9 @@ export default function DocsPage() {
                     className="w-full px-3 py-2 bg-white/10 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
-                    <option value="" className="bg-gray-800 text-white">Select Process Item</option>
+                    <option value="" className="bg-red-500/20 text-white">Select Process Item</option>
                     {processItems.map((item) => (
-                      <option key={item._id} value={item.categoryName} className="bg-gray-800 text-white">
+                      <option key={item._id} value={item.categoryName} className="bg-red-500/20 text-white">
                         {item.categoryName}
                       </option>
                     ))}
@@ -458,9 +458,9 @@ export default function DocsPage() {
                       className="w-full px-3 py-2 bg-white/10 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      <option value="" className="bg-gray-800 text-white">Select Document ID</option>
+                      <option value="" className="bg-red-500/20 text-white">Select Document ID</option>
                       {documentIds.map((docId) => (
-                        <option key={docId._id} value={docId.docId} className="bg-gray-800 text-white">
+                        <option key={docId._id} value={docId.docId} className="bg-red-500/20 text-white">
                           {docId.docId} - {docId.description || 'No description'}
                         </option>
                       ))}
@@ -475,9 +475,9 @@ export default function DocsPage() {
                       className="w-full px-3 py-2 bg-white/10 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      <option value="" className="bg-gray-800 text-white">Select Form ID</option>
+                      <option value="" className="bg-red-500/20 text-white">Select Form ID</option>
                       {forms.map((form) => (
-                        <option key={form._id} value={form.formId} className="bg-gray-800 text-white">
+                        <option key={form._id} value={form.formId} className="bg-red-500/20 text-white">
                           {form.formId} - {form.description || 'No description'}
                         </option>
                       ))}
@@ -494,11 +494,11 @@ export default function DocsPage() {
                     className="w-full px-3 py-2 bg-white/10 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
-                    <option value="" className="bg-gray-800 text-white">Select Form Revision</option>
+                    <option value="" className="bg-red-500/20 text-white">Select Form Revision</option>
                     {forms
                       .filter(form => form.formId === formData.formId)
                       .map((form) => (
-                        <option key={form._id} value={form.formRev} className="bg-gray-800 text-white">
+                        <option key={form._id} value={form.formRev} className="bg-red-500/20 text-white">
                           {form.formRev}
                         </option>
                       ))}
@@ -543,7 +543,7 @@ export default function DocsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+              <Card className="glassmorphism-card glassmorphism-card-hover">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

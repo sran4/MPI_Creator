@@ -680,7 +680,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                         transition={{ delay: sectionIndex * 0.1 }}
                           className={`${snapshot.isDragging ? 'rotate-2 scale-105' : ''} transition-transform duration-200`}
                         >
-              <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+              <Card className="glassmorphism-card glassmorphism-card-hover">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
@@ -893,11 +893,11 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
 
         {/* Add Section Modal */}
         {showAddSectionModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-red-900/50 flex items-center justify-center z-50 p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
+              className="glassmorphism-card rounded-lg p-6 w-full max-w-md"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Add New Section</h2>
@@ -953,11 +953,11 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
 
         {/* Edit Section Modal */}
         {showEditSectionModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-red-900/50 flex items-center justify-center z-50 p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
+              className="glassmorphism-card rounded-lg p-6 w-full max-w-md"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Edit Section</h2>
@@ -1019,7 +1019,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              className="glassmorphism-card rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Add New Step</h2>
@@ -1105,7 +1105,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+              className="glassmorphism-card rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Insert Task</h2>
@@ -1161,7 +1161,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+              className="glassmorphism-card rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -1231,11 +1231,11 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
 
         {/* Add Image Modal */}
         {showAddImageModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-red-900/50 flex items-center justify-center z-50 p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
+              className="glassmorphism-card rounded-lg p-6 w-full max-w-md"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Add Image Link</h2>

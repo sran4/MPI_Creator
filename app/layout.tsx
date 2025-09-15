@@ -8,8 +8,8 @@ import Navbar from '@/components/Navbar'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MPI Generator - Manufacturing Process Instructions',
-  description: 'Professional web-based application for generating Manufacturing Process Instructions (MPI) for PCBA companies',
+  title: 'MPI Traveler Combo Creator - Manufacturing Process Instructions',
+  description: 'Professional web-based application for creating both MPI and Traveler documents in one process for PCBA companies',
 }
 
 export default function RootLayout({

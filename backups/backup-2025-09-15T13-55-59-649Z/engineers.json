@@ -1,0 +1,13 @@
+[
+  {
+    "_id": "68c70c90104089a066fe448f",
+    "fullName": "Jimmy Sran",
+    "email": "jimmy@email.com",
+    "password": "$2a$12$h..b3vDF7VK5Sjk0DnRP4O2Vt9c72ah4W/AgBD9SpK9NzacVbLyU.",
+    "title": "Process Engineer",
+    "isActive": true,
+    "createdAt": "2025-09-14T18:42:24.818Z",
+    "updatedAt": "2025-09-14T18:42:24.818Z",
+    "__v": 0
+  }
+]

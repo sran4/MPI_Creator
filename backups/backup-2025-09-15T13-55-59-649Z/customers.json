@@ -1,0 +1,19 @@
+[
+  {
+    "_id": "68c781e00270ec60f62581b3",
+    "customerCompanyId": "68c70f75eda1875575d6d8dd",
+    "assemblyName": "88X104056",
+    "assemblyRev": "Rev 1.0",
+    "drawingName": "AC - XXX  bds",
+    "drawingRev": "2.0",
+    "assemblyQuantity": 500,
+    "kitReceivedDate": "2025-09-03T00:00:00.000Z",
+    "kitCompleteDate": "2025-09-03T00:00:00.000Z",
+    "comments": "MPI: MPI000001 - Job: U000001",
+    "engineerId": "68c70c90104089a066fe448f",
+    "isActive": true,
+    "createdAt": "2025-09-15T03:02:56.295Z",
+    "updatedAt": "2025-09-15T03:02:56.295Z",
+    "__v": 0
+  }
+]

@@ -71,13 +71,48 @@
     @apply border-gray-200 dark:border-gray-800;
   }
   body {
-    @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+    @apply bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 text-white;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   }
 }
 
 @layer components {
   .glassmorphism {
     @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  
+  .glassmorphism-card {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(248, 113, 113, 0.3) !important;
+    box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.25) !important;
+  }
+  
+  .glassmorphism-card-hover {
+    transition: all 0.3s ease !important;
+  }
+  
+  .glassmorphism-card-hover:hover {
+    background-color: rgba(239, 68, 68, 0.3) !important;
+    border-color: rgba(248, 113, 113, 0.4) !important;
+    box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.3) !important;
+  }
+  
+  /* Force red glassmorphism on all cards */
+  div.glassmorphism-card {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(248, 113, 113, 0.3) !important;
+    box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.25) !important;
+  }
+  
+  .glassmorphism-red {
+    @apply bg-red-500/20 backdrop-blur-md border border-red-400/30 shadow-lg shadow-red-500/10;
+  }
+  
+  .glassmorphism-red-hover {
+    @apply hover:bg-red-500/30 hover:border-red-400/40 hover:shadow-xl hover:shadow-red-500/20 transition-all duration-300;
   }
   
   .glassmorphism-dark {
@@ -90,6 +125,12 @@
   
   .gradient-bg {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .gradient-bg-enhanced {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+    background-size: 200% 200%;
+    animation: gradientShift 8s ease infinite;
   }
   
   .gradient-bg-light {
@@ -142,32 +183,38 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-800;
+  @apply bg-white/10 backdrop-blur-sm;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  @apply bg-white/30 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
+  @apply bg-white/40;
 }
 
 /* Rich text editor styles */
 .ql-editor {
-  @apply text-gray-900 dark:text-gray-100;
+  @apply text-white;
 }
 
 .ql-toolbar {
-  @apply border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900;
+  @apply border-white/20 bg-white/10 backdrop-blur-md;
 }
 
 .ql-container {
-  @apply border-gray-200 dark:border-gray-800;
+  @apply border-white/20 bg-white/5 backdrop-blur-sm;
 }

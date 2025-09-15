@@ -95,7 +95,7 @@ export default function NewEngineerPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <Card className="glassmorphism border-white/20">
+          <Card className="glassmorphism-card glassmorphism-card-hover">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-white flex items-center">
                 <User className="h-6 w-6 mr-3" />

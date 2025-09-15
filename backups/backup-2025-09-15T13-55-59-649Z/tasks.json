@@ -1,0 +1,58 @@
+[
+  {
+    "_id": "68c765ee022a036b4a595764",
+    "step": "1.\tFA/NPI forms",
+    "categoryName": "Applicable Documents",
+    "processItem": "68c6f62e104089a066fe4277",
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-15T01:03:42.706Z",
+    "updatedAt": "2025-09-15T01:03:42.706Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c76608022a036b4a595774",
+    "step": "2.\tBOM",
+    "categoryName": "Applicable Documents",
+    "processItem": "68c6f62e104089a066fe4277",
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-15T01:04:08.400Z",
+    "updatedAt": "2025-09-15T01:04:08.400Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c766bb022a036b4a595779",
+    "step": "3.\tAssembly Drawing",
+    "categoryName": "Applicable Documents",
+    "processItem": "68c6f62e104089a066fe4277",
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-15T01:07:07.544Z",
+    "updatedAt": "2025-09-15T01:07:07.544Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c766e7022a036b4a59577e",
+    "step": "4.\tAssembly Drawing/Instructions",
+    "categoryName": "Applicable Documents",
+    "processItem": "68c6f62e104089a066fe4277",
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-15T01:07:51.166Z",
+    "updatedAt": "2025-09-15T01:07:51.166Z",
+    "__v": 0
+  }
+]

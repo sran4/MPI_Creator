@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-09-15T13:56:00.825Z",
+  "database": "test",
+  "collections": [
+    {
+      "name": "mpis",
+      "count": 1
+    },
+    {
+      "name": "engineers",
+      "count": 1
+    },
+    {
+      "name": "tasks",
+      "count": 4
+    },
+    {
+      "name": "stepcategories",
+      "count": 0
+    },
+    {
+      "name": "globalsteps",
+      "count": 0
+    },
+    {
+      "name": "documentids",
+      "count": 13
+    },
+    {
+      "name": "processitems",
+      "count": 6
+    },
+    {
+      "name": "customers",
+      "count": 1
+    },
+    {
+      "name": "forms",
+      "count": 2
+    },
+    {
+      "name": "customercompanies",
+      "count": 10
+    },
+    {
+      "name": "docs",
+      "count": 1
+    },
+    {
+      "name": "admins",
+      "count": 1
+    }
+  ]
+}

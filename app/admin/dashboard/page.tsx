@@ -5,25 +5,26 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { 
-  Users, 
-  FileText, 
-  Settings, 
   Plus, 
+  FileText, 
+  Users, 
+  Settings, 
   Search,
-  Database,
-  Folder,
-  Trash2,
+  Filter,
+  MoreVertical,
+  Eye,
   Edit,
-  ArrowLeft,
-  User,
-  Mail,
+  Trash2,
+  Download,
   Calendar,
-  Activity,
-  File,
-  Building
+  User,
+  Building,
+  Printer,
+  BarChart3,
+  Database,
+  Shield
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -32,172 +33,148 @@ interface Engineer {
   _id: string
   fullName: string
   email: string
-  employeeId: string
-  department: string
+  title: string
   isActive: boolean
   createdAt: string
 }
 
-interface Task {
+interface MPI {
   _id: string
-  step: string
-  categoryName: string
-  usageCount: number
-  isActive: boolean
+  mpiNumber: string
+  status: string
   createdAt: string
 }
 
-interface Admin {
-  _id: string
-  email: string
-}
-
-export default function AdminDashboard() {
-  const [admin, setAdmin] = useState<Admin | null>(null)
+export default function AdminDashboardPage() {
   const [engineers, setEngineers] = useState<Engineer[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [mpis, setMpis] = useState<MPI[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [activeTab, setActiveTab] = useState<'engineers' | 'tasks'>('engineers')
   const router = useRouter()
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
+    fetchData()
+  }, [])
 
-    fetchAdminData()
-    fetchEngineers()
-    fetchTasks()
-  }, [router])
-
-  const fetchAdminData = async () => {
+  const fetchData = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        setAdmin(result.user)
-      } else {
-        toast.error('Failed to fetch admin data')
+      if (!token) {
         router.push('/login')
+        return
       }
-    } catch (error) {
-      console.error('Error fetching admin data:', error)
-      toast.error('An error occurred while fetching admin data')
-      router.push('/login')
-    }
-  }
 
-  const fetchEngineers = async () => {
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/admin/engineers', {
+      // Fetch engineers
+      const engineersResponse = await fetch('/api/admin/engineers', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
 
-      if (response.ok) {
-        const result = await response.json()
-        setEngineers(result.engineers)
-      } else {
-        console.error('Failed to fetch engineers')
+      if (engineersResponse.ok) {
+        const engineersData = await engineersResponse.json()
+        setEngineers(engineersData.engineers || [])
       }
-    } catch (error) {
-      console.error('Error fetching engineers:', error)
-    }
-  }
 
-  const fetchTasks = async () => {
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/admin/steps', {
+      // Fetch MPIs
+      const mpisResponse = await fetch('/api/mpi', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
 
-      if (response.ok) {
-        const result = await response.json()
-        setTasks(result.steps)
-      } else {
-        console.error('Failed to fetch tasks')
+      if (mpisResponse.ok) {
+        const mpisData = await mpisResponse.json()
+        setMpis(mpisData.mpis || [])
       }
+
     } catch (error) {
-      console.error('Error fetching tasks:', error)
+      console.error('Error fetching data:', error)
+      toast.error('Failed to fetch dashboard data')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    router.push('/login')
+  const handleDeleteEngineer = async (engineerId: string) => {
+    if (!confirm('Are you sure you want to delete this engineer? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/engineers/${engineerId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        toast.success('Engineer deleted successfully')
+        fetchData()
+      } else {
+        toast.error('Failed to delete engineer')
+      }
+    } catch (error) {
+      console.error('Error deleting engineer:', error)
+      toast.error('An error occurred while deleting the engineer')
+    }
   }
-
-  const filteredEngineers = engineers.filter(engineer =>
-    engineer.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    engineer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    engineer.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    engineer.department.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const filteredTasks = tasks.filter(task =>
-    task.step.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
-  )
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading dashboard...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen">
+      {/* Floating Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-32 h-32 bg-white opacity-5 rounded-full floating"></div>
+        <div className="absolute top-40 right-32 w-24 h-24 bg-white opacity-5 rounded-full floating" style={{animationDelay: '-2s'}}></div>
+        <div className="absolute bottom-32 left-40 w-40 h-40 bg-white opacity-5 rounded-full floating" style={{animationDelay: '-4s'}}></div>
+        <div className="absolute bottom-20 right-20 w-28 h-28 bg-white opacity-5 rounded-full floating" style={{animationDelay: '-1s'}}></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-              <p className="text-white/70 mt-1">Welcome back, {admin?.email}</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
+            <p className="text-white opacity-80">Manage engineers, MPIs, and system settings</p>
           </div>
-          <div className="flex items-center space-x-3">
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="bg-blue-600 hover:bg-blue-70  text-white hover:bg-white/10"
-            >
-              Logout
-            </Button>
+          <div className="flex space-x-4">
+            <Link href="/admin/engineers/new">
+              <Button className="bg-green-600 hover:bg-green-700 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Engineer
+              </Button>
+            </Link>
+            <Link href="/admin/steps/new">
+              <Button className="bg-red-500 hover:bg-red-600 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Step
+              </Button>
+            </Link>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+            <Card className="glassmorphism-card glassmorphism-card-hover">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-white/70">
                   Total Engineers
                 </CardTitle>
-                <Users className="h-4 w-4 text-blue-400" />
+                <Users className="h-4 w-4 text-red-300" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white">{engineers.length}</div>
@@ -213,17 +190,17 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+            <Card className="glassmorphism-card glassmorphism-card-hover">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-white/70">
-                  Tasks
+                  Total MPIs
                 </CardTitle>
-                <FileText className="h-4 w-4 text-green-400" />
+                <FileText className="h-4 w-4 text-red-300" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-white">{tasks.length}</div>
+                <div className="text-2xl font-bold text-white">{mpis.length}</div>
                 <p className="text-xs text-white/60">
-                  {tasks.filter(s => s.isActive).length} active
+                  All time created
                 </p>
               </CardContent>
             </Card>
@@ -234,12 +211,35 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+            <Card className="glassmorphism-card glassmorphism-card-hover">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white/70">
+                  Active MPIs
+                </CardTitle>
+                <BarChart3 className="h-4 w-4 text-red-300" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
+                  {mpis.filter(mpi => mpi.status === 'approved').length}
+                </div>
+                <p className="text-xs text-white/60">
+                  Approved documents
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="glassmorphism-card glassmorphism-card-hover">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-white/70">
                   System Status
                 </CardTitle>
-                <Activity className="h-4 w-4 text-green-400" />
+                <Shield className="h-4 w-4 text-red-300" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white">Online</div>
@@ -252,239 +252,131 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <Link href="/admin/engineers/new">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Engineer
-              </Button>
-            </Link>
-            <Link href="/admin/steps">
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                <FileText className="h-4 w-4 mr-2" />
-                Manage Tasks
-              </Button>
-            </Link>
-            <Link href="/admin/categories">
-              <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                <Folder className="h-4 w-4 mr-2" />
-                Manage Process Items
-              </Button>
-            </Link>
-            <Link href="/admin/docs">
-              <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
-                <File className="h-4 w-4 mr-2" />
-                Manage Docs
-              </Button>
-            </Link>
-            <Link href="/admin/forms">
-              <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                <FileText className="h-4 w-4 mr-2" />
-                Manage Forms
-              </Button>
-            </Link>
-            <Link href="/admin/document-ids">
-              <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                <FileText className="h-4 w-4 mr-2" />
-                Manage Document IDs
-              </Button>
-            </Link>
-            <Link href="/admin/customer-companies">
-              <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white">
-                <Building className="h-4 w-4 mr-2" />
-                Manage Customer Companies
-              </Button>
-            </Link>
-            <Link href="/admin/test-models">
-              <Button className="w-full bg-gray-600 hover:bg-gray-700 text-white">
-                <Database className="h-4 w-4 mr-2" />
-                Test Models
-              </Button>
-            </Link>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <Link href="/admin/engineers">
+            <Card className="glassmorphism-card glassmorphism-card-hover cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-red-300" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Manage Engineers</h3>
+                    <p className="text-white/70 text-sm">Add, edit, or remove engineers</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/steps">
+            <Card className="glassmorphism-card glassmorphism-card-hover cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
+                    <Settings className="h-6 w-6 text-red-300" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Global Steps</h3>
+                    <p className="text-white/70 text-sm">Manage process steps library</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/categories">
+            <Card className="glassmorphism-card glassmorphism-card-hover cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
+                    <Database className="h-6 w-6 text-red-300" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Categories</h3>
+                    <p className="text-white/70 text-sm">Manage step categories</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
-        {/* Tabs */}
-        <div className="flex space-x-1 mb-6">
-          <Button
-            variant={activeTab === 'engineers' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('engineers')}
-            className={activeTab === 'engineers' 
-              ? 'bg-blue-600 text-white' 
-              : 'text-white hover:bg-white/10'
-            }
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Engineers ({engineers.length})
-          </Button>
-          <Button
-            variant={activeTab === 'tasks' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('tasks')}
-            className={activeTab === 'tasks' 
-              ? 'bg-blue-600 text-white' 
-              : 'text-white hover:bg-white/10'
-            }
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Tasks ({tasks.length})
-          </Button>
-        </div>
-
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
-            <Input
-              type="text"
-              placeholder={`Search ${activeTab}...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
-            />
-          </div>
-        </div>
-
-        {/* Content */}
-        {activeTab === 'engineers' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEngineers.map((engineer, index) => (
-              <motion.div
-                key={engineer._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-white text-lg flex items-center">
-                          <User className="h-5 w-5 mr-2 text-blue-400" />
-                          {engineer.fullName}
-                        </CardTitle>
-                        <div className="flex items-center mt-2">
-                          <Mail className="h-4 w-4 mr-1 text-white/60" />
-                          <span className="text-white/70 text-sm">{engineer.email}</span>
+        {/* Recent Engineers */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-6">Recent Engineers</h2>
+            <div className="space-y-4">
+              {engineers.slice(0, 5).map((engineer) => (
+                <Card key={engineer._id} className="glassmorphism-card glassmorphism-card-hover">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-red-300" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-white">{engineer.fullName}</h4>
+                          <p className="text-sm text-white/70">{engineer.email}</p>
+                          <p className="text-xs text-white/60">{engineer.title}</p>
                         </div>
                       </div>
-                      <Badge 
-                        variant={engineer.isActive ? "default" : "secondary"}
-                        className={engineer.isActive 
-                          ? "bg-green-600 text-white" 
-                          : "bg-gray-600 text-white"
-                        }
-                      >
-                        {engineer.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center text-white/70">
-                        <span className="font-medium mr-2">ID:</span>
-                        <span>{engineer.employeeId}</span>
-                      </div>
-                      <div className="flex items-center text-white/70">
-                        <span className="font-medium mr-2">Dept:</span>
-                        <span>{engineer.department}</span>
-                      </div>
-                      <div className="flex items-center text-white/70">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        <span>Joined {new Date(engineer.createdAt).toLocaleDateString()}</span>
+                      <div className="flex items-center space-x-2">
+                        <Badge className={engineer.isActive 
+                          ? "bg-green-500/20 text-green-300 border-green-500/30" 
+                          : "bg-gray-500/20 text-gray-300 border-gray-500/30"
+                        }>
+                          {engineer.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteEngineer(engineer._id)}
+                          className="border-red-500/50 text-red-300 hover:bg-red-500/20"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks.map((task, index) => (
-              <motion.div
-                key={task._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-white text-lg flex items-center">
-                          <FileText className="h-5 w-5 mr-2 text-green-400" />
-                          Task
-                        </CardTitle>
-                        <div className="flex items-center mt-2">
-                          <Folder className="h-4 w-4 mr-1 text-white/60" />
-                          <span className="text-white/70 text-sm">{task.categoryName}</span>
+
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-6">Recent MPIs</h2>
+            <div className="space-y-4">
+              {mpis.slice(0, 5).map((mpi) => (
+                <Card key={mpi._id} className="glassmorphism-card glassmorphism-card-hover">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-red-300" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-white">{mpi.mpiNumber}</h4>
+                          <p className="text-sm text-white/70">
+                            Created: {new Date(mpi.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
-                      <Badge 
-                        variant={task.isActive ? "default" : "secondary"}
-                        className={task.isActive 
-                          ? "bg-green-600 text-white" 
-                          : "bg-gray-600 text-white"
-                        }
-                      >
-                        {task.isActive ? 'Active' : 'Inactive'}
+                      <Badge className={
+                        mpi.status === 'approved' ? "bg-green-500/20 text-green-300 border-green-500/30" :
+                        mpi.status === 'draft' ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" :
+                        mpi.status === 'in-review' ? "bg-blue-500/20 text-blue-300 border-blue-500/30" :
+                        "bg-gray-500/20 text-gray-300 border-gray-500/30"
+                      }>
+                        {mpi.status.replace('-', ' ')}
                       </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-white/80 text-sm mb-4 line-clamp-3">
-                      {task.step}
-                    </p>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center text-white/70">
-                        <Users className="h-4 w-4 mr-1" />
-                        {task.usageCount} uses
-                      </div>
-                      <div className="flex items-center text-white/70">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {new Date(task.createdAt).toLocaleDateString()}
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
-        )}
-
-        {/* Empty State */}
-        {((activeTab === 'engineers' && filteredEngineers.length === 0) || 
-          (activeTab === 'tasks' && filteredTasks.length === 0)) && (
-          <div className="text-center py-12">
-            {activeTab === 'engineers' ? (
-              <>
-                <Users className="h-16 w-16 text-white/30 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white/70 mb-2">No Engineers Found</h3>
-                <p className="text-white/50 mb-6">Get started by adding your first engineer</p>
-                <Link href="/admin/engineers/new">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Engineer
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <FileText className="h-16 w-16 text-white/30 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white/70 mb-2">No Tasks Found</h3>
-                <p className="text-white/50 mb-6">Get started by creating your first task</p>
-                <Link href="/admin/steps">
-                  <Button className="bg-green-600 hover:bg-green-700 text-white">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Manage Tasks
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )

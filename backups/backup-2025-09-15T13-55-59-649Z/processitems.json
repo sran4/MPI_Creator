@@ -1,0 +1,80 @@
+[
+  {
+    "_id": "68c6f62e104089a066fe4277",
+    "categoryName": "Applicable Documents",
+    "steps": [],
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-14T17:06:54.480Z",
+    "updatedAt": "2025-09-14T17:06:54.480Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c6f637104089a066fe427b",
+    "categoryName": "General Instructions",
+    "steps": [],
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-14T17:07:03.532Z",
+    "updatedAt": "2025-09-14T17:07:03.532Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c6f63c104089a066fe427f",
+    "categoryName": "Kit Release",
+    "steps": [],
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-14T17:07:08.488Z",
+    "updatedAt": "2025-09-14T17:07:08.488Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c6f645104089a066fe4283",
+    "categoryName": "SMT Programming /Planning",
+    "steps": [],
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-14T17:07:17.755Z",
+    "updatedAt": "2025-09-14T17:07:17.755Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c6f64c104089a066fe4287",
+    "categoryName": "Paste Print",
+    "steps": [],
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-14T17:07:24.990Z",
+    "updatedAt": "2025-09-14T17:07:24.990Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c6f654104089a066fe428b",
+    "categoryName": "Reflow",
+    "steps": [],
+    "isGlobal": true,
+    "createdBy": "68c6f1612a2a1bc61904c1ce",
+    "createdByModel": "Admin",
+    "usageCount": 0,
+    "isActive": true,
+    "createdAt": "2025-09-14T17:07:32.706Z",
+    "updatedAt": "2025-09-14T17:07:32.706Z",
+    "__v": 0
+  }
+]

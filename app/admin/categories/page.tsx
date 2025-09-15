@@ -219,11 +219,11 @@ export default function CategoriesPage() {
 
         {/* Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-red-900/50 flex items-center justify-center z-50 p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
+              className="glassmorphism-card rounded-lg p-6 w-full max-w-md"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">
@@ -290,7 +290,7 @@ export default function CategoriesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="glassmorphism border-white/20 hover:border-white/40 transition-all duration-300">
+              <Card className="glassmorphism-card glassmorphism-card-hover">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

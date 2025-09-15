@@ -100,20 +100,30 @@ export default function Navbar() {
             <div className="flex items-center">
               <Link href="/" className="text-white text-xl font-bold flex items-center">
                 <FileText className="h-6 w-6 mr-2" />
-                MPI Creator
+                MPI Traveler Combo Creator
               </Link>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="hidden xl:flex items-center justify-center space-x-2 2xl:space-x-4">
               <Link href="/login">
-                <Button variant="ghost" className="text-white hover:bg-white/10 border border-white/20">
+                <Button className="bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-lg flex items-center justify-center">
                   Sign In
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0">
+                <Button className="bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg shadow-red-500/25">
                   Sign Up
                 </Button>
               </Link>
+            </div>
+            {/* Mobile/Tablet/Desktop menu button for loading state */}
+            <div className="xl:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </div>
@@ -129,12 +139,12 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link href="/" className="text-white text-xl font-bold flex items-center">
               <FileText className="h-6 w-6 mr-2" />
-              MPI Creator
+              MPI Traveler Combo Creator
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Desktop Navigation - Only visible on XL screens (1280px+) */}
+          <div className="hidden xl:flex items-center justify-center space-x-2 2xl:space-x-4">
             {user ? (
               <>
                 {/* Navigation Links */}
@@ -177,12 +187,12 @@ export default function Navbar() {
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" className="text-white hover:bg-white/10 border border-white/20">
+                  <Button className="bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-lg flex items-center justify-center">
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0">
+                  <Button className="bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg shadow-red-500/25">
                     Sign Up
                   </Button>
                 </Link>
@@ -190,8 +200,8 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="sm:hidden">
+          {/* Mobile/Tablet/Desktop menu button - Shows on all screens < 1280px */}
+          <div className="xl:hidden">
             <Button
               variant="ghost"
               size="sm"
@@ -203,9 +213,9 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile/Tablet/Desktop Navigation - Shows on all screens < 1280px */}
         {isMobileMenuOpen && (
-          <div className="sm:hidden border-t border-white/20">
+          <div className="xl:hidden border-t border-white/20">
             <div className="px-2 pt-2 pb-3 space-y-1">
               {user ? (
                 <>
@@ -249,12 +259,12 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start text-white hover:bg-white/10">
+                    <Button className="w-full justify-center bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-lg flex items-center">
                       Sign In
                     </Button>
                   </Link>
                   <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button className="w-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/25">
                       Sign Up
                     </Button>
                   </Link>

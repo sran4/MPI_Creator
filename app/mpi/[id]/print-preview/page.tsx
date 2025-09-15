@@ -125,7 +125,7 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600 text-xl">Loading print preview...</div>
       </div>
     )
@@ -133,7 +133,7 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
 
   if (!mpi) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600 text-xl">MPI not found</div>
       </div>
     )
@@ -158,7 +158,7 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
         }
       `}</style>
       
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen">
       {/* Print Preview Header - Hidden when printing */}
       <div className="bg-white shadow-sm border-b print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
