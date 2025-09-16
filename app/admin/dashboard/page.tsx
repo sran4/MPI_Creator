@@ -29,6 +29,14 @@ import {
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 
+interface User {
+  _id: string
+  email: string
+  fullName: string
+  userType: "admin" | "engineer"
+  title?: string
+}
+
 interface Engineer {
   _id: string
   fullName: string
@@ -48,12 +56,34 @@ interface MPI {
 export default function AdminDashboardPage() {
   const [engineers, setEngineers] = useState<Engineer[]>([])
   const [mpis, setMpis] = useState<MPI[]>([])
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
+    fetchUser()
     fetchData()
   }, [])
+
+  const fetchUser = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) return
+
+      const response = await fetch("/api/auth/me", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUser(data.user)
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error)
+    }
+  }
 
   const fetchData = async () => {
     try {
@@ -144,7 +174,9 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-            <p className="text-white opacity-80">Manage engineers, MPIs, and system settings</p>
+            <p className="text-white opacity-80">
+              Manage engineers, MPIs, and system settings
+            </p>
           </div>
           <div className="flex space-x-4">
             <Link href="/admin/engineers/new">
@@ -161,6 +193,35 @@ export default function AdminDashboardPage() {
             </Link>
           </div>
         </div>
+
+        {/* Welcome Card */}
+        {user && (
+          <Card className="glassmorphism-card glassmorphism-card-hover mb-8">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-red-500/20 rounded-full">
+                    <Shield className="h-8 w-8 text-red-300" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Welcome back, {user.fullName}!</h2>
+                    <p className="text-white/70">
+                      Administrator
+                      {user.title && ` • ${user.title}`}
+                    </p>
+                    <p className="text-white/60 text-sm mt-1">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-white/60 text-sm">Last login</p>
+                  <p className="text-white font-medium">{new Date().toLocaleDateString()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

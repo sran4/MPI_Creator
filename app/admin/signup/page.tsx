@@ -9,12 +9,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { User, Mail, Lock, Shield, ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { User, Mail, Lock, Shield, ArrowLeft, Eye, EyeOff, Briefcase } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 const adminSignupSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  title: z.string().optional(),
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
@@ -51,6 +52,7 @@ export default function AdminSignupPage() {
         },
         body: JSON.stringify({
           fullName: data.fullName,
+          title: data.title,
           email: data.email,
           password: data.password,
           adminKey: data.adminKey,
@@ -126,6 +128,24 @@ export default function AdminSignupPage() {
                 </div>
                 {errors.fullName && (
                   <p className="text-red-300 text-sm">{errors.fullName.message}</p>
+                )}
+              </div>
+
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-white">Title (Optional)</Label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                  <Input
+                    id="title"
+                    type="text"
+                    placeholder="e.g., System Administrator, IT Manager"
+                    className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
+                    {...register('title')}
+                  />
+                </div>
+                {errors.title && (
+                  <p className="text-red-300 text-sm">{errors.title.message}</p>
                 )}
               </div>
 

@@ -6,6 +6,8 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { 
   Plus, 
   FileText, 
@@ -22,7 +24,10 @@ import {
   User,
   Building,
   Printer,
-  CheckSquare
+  CheckSquare,
+  Lock,
+  EyeOff,
+  Save
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -66,6 +71,14 @@ export default function DashboardPage() {
     mpiId: null,
     mpiNumber: ''
   })
+  const [passwordChangeModal, setPasswordChangeModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
   const router = useRouter()
 
   const fetchUser = async () => {
@@ -101,23 +114,32 @@ export default function DashboardPage() {
         return
       }
 
+      console.log('🔍 Dashboard: Fetching MPIs with token:', token.substring(0, 20) + '...')
+
       const response = await fetch('/api/mpi', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
 
+      console.log('🔍 Dashboard: Response status:', response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log('🔍 Dashboard: Received data:', data)
+        console.log('🔍 Dashboard: MPIs count:', data.mpis?.length || 0)
         setMpis(data.mpis || [])
       } else if (response.status === 401) {
+        console.log('🔍 Dashboard: Unauthorized, redirecting to login')
         localStorage.removeItem('token')
         router.push('/login')
       } else {
+        const errorData = await response.json()
+        console.log('🔍 Dashboard: Error response:', errorData)
         toast.error('Failed to fetch MPIs')
       }
     } catch (error) {
-      console.error('Error fetching MPIs:', error)
+      console.error('🔍 Dashboard: Error fetching MPIs:', error)
       toast.error('An error occurred while fetching MPIs')
     } finally {
       setIsLoading(false)
@@ -153,6 +175,57 @@ export default function DashboardPage() {
 
   const closeDeleteModal = () => {
     setDeleteModal({ isOpen: false, mpiId: null, mpiNumber: '' })
+  }
+
+  const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Please fill in all password fields')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match')
+      return
+    }
+
+    if (newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long')
+      return
+    }
+
+    setIsChangingPassword(true)
+    
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword
+        })
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast.success('Password changed successfully!')
+        setPasswordChangeModal(false)
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+      } else {
+        toast.error(result.error || 'Failed to change password')
+      }
+    } catch (error) {
+      console.error('Error changing password:', error)
+      toast.error('An error occurred while changing password')
+    } finally {
+      setIsChangingPassword(false)
+    }
   }
 
   const filteredMPIs = mpis.filter(mpi => {
@@ -228,6 +301,35 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
+
+        {/* Welcome Card */}
+        {user && (
+          <Card className="glassmorphism-card glassmorphism-card-hover mb-8">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-blue-500/20 rounded-full">
+                    <User className="h-8 w-8 text-blue-300" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Welcome back, {user.fullName}!</h2>
+                    <p className="text-white/70">
+                      {user.userType === "admin" ? "Administrator" : "Engineer"}
+                      {user.title && ` • ${user.title}`}
+                    </p>
+                    <p className="text-white/60 text-sm mt-1">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-white/60 text-sm">Last login</p>
+                  <p className="text-white font-medium">{new Date().toLocaleDateString()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -460,19 +562,62 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 'settings' && (
-          <Card className="glassmorphism-card">
-            <CardContent className="p-12 text-center">
-              <Settings className="h-16 w-16 text-white/50 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Settings</h3>
-              <p className="text-white/70 mb-6">
-                Configure your account settings and preferences.
-              </p>
-              <Button className="bg-red-500 hover:bg-red-600 text-white">
-                <Settings className="h-4 w-4 mr-2" />
-                Open Settings
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            {/* Account Information */}
+            <Card className="glassmorphism-card">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <User className="h-5 w-5 mr-2" />
+                  Account Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-white/70 text-sm">Full Name</Label>
+                    <p className="text-white font-medium">{user?.fullName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-white/70 text-sm">Email</Label>
+                    <p className="text-white font-medium">{user?.email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-white/70 text-sm">Role</Label>
+                    <p className="text-white font-medium capitalize">{user?.userType}</p>
+                  </div>
+                  <div>
+                    <Label className="text-white/70 text-sm">Title</Label>
+                    <p className="text-white font-medium">{user?.title || 'Not specified'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Security Settings */}
+            <Card className="glassmorphism-card">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Lock className="h-5 w-5 mr-2" />
+                  Security Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-medium">Password</h4>
+                    <p className="text-white/70 text-sm">Change your account password</p>
+                  </div>
+                  <Button 
+                    onClick={() => setPasswordChangeModal(true)}
+                    className="bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    Change Password
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
 
@@ -507,6 +652,114 @@ export default function DashboardPage() {
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Change Modal */}
+      {passwordChangeModal && (
+        <div className="fixed inset-0 bg-red-900/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glassmorphism-card p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="p-2 bg-red-500/20 rounded-lg mr-3">
+                <Lock className="h-6 w-6 text-red-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">Change Password</h3>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Current Password */}
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword" className="text-white">Current Password *</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                  <Input
+                    id="currentPassword"
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/80 transition-colors"
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div className="space-y-2">
+                <Label htmlFor="newPassword" className="text-white">New Password *</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/80 transition-colors"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm New Password */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-white">Confirm New Password *</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/80 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <Button
+                onClick={() => {
+                  setPasswordChangeModal(false)
+                  setCurrentPassword('')
+                  setNewPassword('')
+                  setConfirmPassword('')
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handlePasswordChange}
+                disabled={isChangingPassword}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isChangingPassword ? 'Changing...' : 'Change Password'}
               </Button>
             </div>
           </div>

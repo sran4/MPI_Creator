@@ -7,11 +7,11 @@ export async function POST(request: NextRequest) {
   try {
     await dbConnect()
 
-    const { email, password, adminKey } = await request.json()
+    const { fullName, title, email, password, adminKey } = await request.json()
 
-    if (!email || !password || !adminKey) {
+    if (!fullName || !email || !password || !adminKey) {
       return NextResponse.json(
-        { error: 'Email, password, and admin key are required' },
+        { error: 'Full name, email, password, and admin key are required' },
         { status: 400 }
       )
     }
@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
 
     // Create new admin
     const admin = new Admin({
+      fullName,
+      title: title || undefined,
       email,
       password,
     })
@@ -47,6 +49,8 @@ export async function POST(request: NextRequest) {
       { 
         userId: admin._id, 
         email: admin.email, 
+        fullName: admin.fullName,
+        title: admin.title,
         userType: 'admin'
       },
       process.env.JWT_SECRET!,

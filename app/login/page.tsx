@@ -88,7 +88,7 @@ export default function LoginPage() {
         <div className="absolute bottom-20 right-20 w-28 h-28 bg-white opacity-5 rounded-full floating" style={{animationDelay: '-1s'}}></div>
       </div>
 
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-2xl relative z-10">
         {/* Back to Home Link */}
         <div className="mb-6">
           <Link 
@@ -113,7 +113,7 @@ export default function LoginPage() {
           
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* User Type Selection */}
+              {/* Row 1: User Type Selection - Full Width */}
               <div className="space-y-2">
                 <Label htmlFor="userType" className="text-white">Account Type *</Label>
                 <Select onValueChange={(value) => setValue('userType', value as 'engineer' | 'admin')}>
@@ -130,50 +130,53 @@ export default function LoginPage() {
                 )}
               </div>
 
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">Email *</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-white/50" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
-                    {...register('email')}
-                  />
+              {/* Row 2: Email and Password - Same Line on Large Screens */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-white">Email *</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
+                      {...register('email')}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-red-300 text-sm">{errors.email.message}</p>
+                  )}
                 </div>
-                {errors.email && (
-                  <p className="text-red-300 text-sm">{errors.email.message}</p>
-                )}
+
+                {/* Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-white">Password *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
+                      {...register('password')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/80 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-red-300 text-sm">{errors.password.message}</p>
+                  )}
+                </div>
               </div>
 
-              {/* Password */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">Password *</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-white/50" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
-                    {...register('password')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-white/50 hover:text-white/80 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-red-300 text-sm">{errors.password.message}</p>
-                )}
-              </div>
-
-              {/* Submit Button */}
+              {/* Row 3: Submit Button - Full Width */}
               <Button
                 type="submit"
                 className="w-full bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg shadow-red-500/25"

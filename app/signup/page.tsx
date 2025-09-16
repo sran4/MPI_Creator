@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { User, Mail, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { User, Mail, Lock, ArrowLeft, Eye, EyeOff, Shield, Briefcase } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
@@ -19,9 +19,19 @@ const signupSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
   title: z.string().min(2, 'Title must be at least 2 characters'),
+  userType: z.enum(['engineer', 'admin']),
+  adminKey: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+}).refine((data) => {
+  if (data.userType === 'admin' && !data.adminKey) {
+    return false
+  }
+  return true
+}, {
+  message: "Admin key is required for admin signup",
+  path: ["adminKey"],
 })
 
 type SignupFormData = z.infer<typeof signupSchema>
@@ -30,32 +40,49 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [userType, setUserType] = useState<'engineer' | 'admin'>('engineer')
   const router = useRouter()
   
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
+    defaultValues: {
+      userType: 'engineer'
+    }
   })
 
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true)
     
     try {
-      const response = await fetch('/api/auth/signup', {
+      const endpoint = data.userType === 'admin' ? '/api/auth/admin-signup' : '/api/auth/signup'
+      const body = data.userType === 'admin' 
+        ? {
+            fullName: data.fullName,
+            title: data.title,
+            email: data.email,
+            password: data.password,
+            adminKey: data.adminKey
+          }
+        : {
+            fullName: data.fullName,
+            email: data.email,
+            password: data.password,
+            title: data.title,
+            userType: 'engineer'
+          }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          fullName: data.fullName,
-          email: data.email,
-          password: data.password,
-          title: data.title,
-          userType: 'engineer'
-        }),
+        body: JSON.stringify(body),
       })
 
       const result = await response.json()
@@ -103,12 +130,52 @@ export default function SignupPage() {
               <div className="w-10"></div>
             </div>
             <CardDescription className="text-white opacity-80">
-              Join MPI Traveler Combo Creator as an Engineer
+              Join MPI Traveler Combo Creator
             </CardDescription>
           </CardHeader>
           
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* User Type Selection */}
+              <div className="space-y-3">
+                <Label className="text-white">Account Type *</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserType('engineer')
+                      setValue('userType', 'engineer')
+                    }}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      userType === 'engineer'
+                        ? 'border-red-400 bg-red-500/20 text-white'
+                        : 'border-white/20 bg-white/5 text-white/70 hover:border-white/40'
+                    }`}
+                  >
+                    <User className="h-6 w-6 mx-auto mb-2" />
+                    <div className="font-medium">Engineer</div>
+                    <div className="text-xs opacity-80">Create MPI documents</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserType('admin')
+                      setValue('userType', 'admin')
+                    }}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      userType === 'admin'
+                        ? 'border-red-400 bg-red-500/20 text-white'
+                        : 'border-white/20 bg-white/5 text-white/70 hover:border-white/40'
+                    }`}
+                  >
+                    <Shield className="h-6 w-6 mx-auto mb-2" />
+                    <div className="font-medium">Admin</div>
+                    <div className="text-xs opacity-80">System administration</div>
+                  </button>
+                </div>
+                <input type="hidden" {...register('userType')} />
+              </div>
+
               {/* Personal Information Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Full Name */}
@@ -150,13 +217,19 @@ export default function SignupPage() {
 
               {/* Job Title */}
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-white">Job Title *</Label>
+                <Label htmlFor="title" className="text-white">
+                  {userType === 'admin' ? 'Title (Optional)' : 'Job Title *'}
+                </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                  {userType === 'admin' ? (
+                    <Briefcase className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                  ) : (
+                    <User className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                  )}
                   <Input
                     id="title"
                     type="text"
-                    placeholder="e.g., Manufacturing Engineer"
+                    placeholder={userType === 'admin' ? 'e.g., System Administrator, IT Manager' : 'e.g., Manufacturing Engineer'}
                     className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
                     {...register('title')}
                   />
@@ -165,6 +238,29 @@ export default function SignupPage() {
                   <p className="text-red-300 text-sm">{errors.title.message}</p>
                 )}
               </div>
+
+              {/* Admin Key - Only show for admin */}
+              {userType === 'admin' && (
+                <div className="space-y-2">
+                  <Label htmlFor="adminKey" className="text-white">Admin Key *</Label>
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-3 h-4 w-4 text-white/50" />
+                    <Input
+                      id="adminKey"
+                      type="password"
+                      placeholder="Enter admin key"
+                      className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
+                      {...register('adminKey')}
+                    />
+                  </div>
+                  {errors.adminKey && (
+                    <p className="text-red-300 text-sm">{errors.adminKey.message}</p>
+                  )}
+                  <p className="text-white/60 text-xs">
+                    Contact your system administrator for the admin key
+                  </p>
+                </div>
+              )}
 
               {/* Password Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -225,7 +321,10 @@ export default function SignupPage() {
                 className="w-full bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg shadow-red-500/25"
                 disabled={isLoading}
               >
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {isLoading 
+                  ? `Creating ${userType === 'admin' ? 'Admin' : 'Engineer'} Account...` 
+                  : `Create ${userType === 'admin' ? 'Admin' : 'Engineer'} Account`
+                }
               </Button>
             </form>
 

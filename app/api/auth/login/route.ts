@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
         userId: user._id, 
         email: user.email, 
         userType,
-        fullName: user.fullName || (userType === 'admin' ? 'Admin' : user.fullName)
+        fullName: user.fullName,
+        title: user.title
       },
       process.env.JWT_SECRET!,
       { expiresIn: '30d' }

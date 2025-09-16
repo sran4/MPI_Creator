@@ -57,7 +57,7 @@ export default function MPIViewPage({ params }: { params: { id: string } }) {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-8 mb-8">
           <h1 className="text-4xl font-bold text-white mb-4">
-            Customer Information (MPI)
+            MPI/Traveler Combo
           </h1>
           <h2 className="text-2xl font-semibold text-white opacity-90 mb-4">
             {mpi.customerAssemblyName || 'Assembly Name'}

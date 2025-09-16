@@ -158,6 +158,31 @@ export default function NewMPIPage() {
     }
     
     try {
+      // Generate fresh job number and MPI number for this submission
+      const [jobResponse, mpiResponse] = await Promise.all([
+        fetch('/api/mpi/job-numbers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }),
+        fetch('/api/mpi/mpi-numbers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
+      ])
+
+      const jobData = await jobResponse.json()
+      const mpiData = await mpiResponse.json()
+      
+      // Format the numbers with dashes
+      const formattedJobNumber = jobData.jobNumber.replace(/([A-Z])(\d+)/, '$1-$2')
+      const formattedMPINumber = mpiData.mpiNumber.replace(/([A-Z]+)(\d+)/, '$1-$2')
+
       const token = localStorage.getItem('token')
       const response = await fetch('/api/mpi', {
         method: 'POST',
@@ -167,9 +192,9 @@ export default function NewMPIPage() {
         },
         body: JSON.stringify({
           customerCompanyId: data.customerCompanyId,
-          jobNumber: data.jobNumber,
+          jobNumber: formattedJobNumber,
           oldJobNumber: data.oldJobNumber,
-          mpiNumber: data.mpiNumber,
+          mpiNumber: formattedMPINumber,
           mpiVersion: data.mpiVersion,
           customerAssemblyName: data.customerAssemblyName,
           assemblyRev: data.assemblyRev,
