@@ -12,12 +12,15 @@ const buttonVariants = cva(
         destructive:
           'bg-red-600 text-white hover:bg-red-700',
         outline:
-          'border border-gray-300 bg-white hover:bg-gray-50 text-gray-900',
+          'border border-gray-500 bg-gray-600 hover:bg-gray-700 text-white',
         secondary:
-          'bg-gray-100 text-gray-900 hover:bg-gray-200',
-        ghost: 'hover:bg-gray-100 text-gray-900',
-        link: 'text-blue-600 underline-offset-4 hover:underline',
+          'bg-gray-600 text-white hover:bg-gray-700',
+        ghost: 'hover:bg-gray-600 text-white hover:text-white',
+        link: 'text-blue-400 underline-offset-4 hover:underline hover:text-blue-300',
         glass: 'glassmorphism text-white hover:bg-white/20 border-white/20',
+        success: 'bg-green-600 text-white hover:bg-green-700',
+        warning: 'bg-yellow-600 text-white hover:bg-yellow-700',
+        info: 'bg-blue-500 text-white hover:bg-blue-600',
       },
       size: {
         default: 'h-10 px-4 py-2',

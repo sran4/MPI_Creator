@@ -38,10 +38,15 @@ interface User {
 interface MPI {
   _id: string
   mpiNumber: string
-  mpiRev: string
+  mpiVersion?: string
   jobNumber: string
-  customerName: string
-  customerCompanyName?: string
+  customerAssemblyName: string
+  customerCompanyId?: {
+    companyName: string
+    city?: string
+    state?: string
+  }
+  assemblyQuantity?: number
   status: 'draft' | 'in-review' | 'approved' | 'rejected'
   createdAt: string
   updatedAt: string
@@ -56,6 +61,11 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [activeTab, setActiveTab] = useState<'mpis' | 'customers' | 'settings'>('mpis')
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; mpiId: string | null; mpiNumber: string }>({
+    isOpen: false,
+    mpiId: null,
+    mpiNumber: ''
+  })
   const router = useRouter()
 
   const fetchUser = async () => {
@@ -115,10 +125,6 @@ export default function DashboardPage() {
   }
 
   const handleDeleteMPI = async (mpiId: string) => {
-    if (!confirm('Are you sure you want to delete this MPI? This action cannot be undone.')) {
-      return
-    }
-
     try {
       const token = localStorage.getItem('token')
       const response = await fetch(`/api/mpi/${mpiId}`, {
@@ -131,6 +137,7 @@ export default function DashboardPage() {
       if (response.ok) {
         toast.success('MPI deleted successfully')
         fetchMPIs()
+        setDeleteModal({ isOpen: false, mpiId: null, mpiNumber: '' })
       } else {
         toast.error('Failed to delete MPI')
       }
@@ -140,10 +147,19 @@ export default function DashboardPage() {
     }
   }
 
+  const openDeleteModal = (mpiId: string, mpiNumber: string) => {
+    setDeleteModal({ isOpen: true, mpiId, mpiNumber })
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, mpiId: null, mpiNumber: '' })
+  }
+
   const filteredMPIs = mpis.filter(mpi => {
     const matchesSearch = mpi.mpiNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          mpi.jobNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         mpi.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+                         mpi.customerAssemblyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (mpi.customerCompanyId?.companyName && mpi.customerCompanyId.companyName.toLowerCase().includes(searchTerm.toLowerCase()))
     
     const matchesStatus = statusFilter === 'all' || mpi.status === statusFilter
     
@@ -350,40 +366,36 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="space-y-3">
                 {filteredMPIs.map((mpi) => (
                   <motion.div
                     key={mpi._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Card className="glassmorphism-card glassmorphism-card-hover">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
+                    <div className="glassmorphism-card glassmorphism-card-hover p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-6">
                           <div>
-                            <CardTitle className="text-white text-lg">
-                              {mpi.mpiNumber} Rev {mpi.mpiRev}
-                            </CardTitle>
-                            <CardDescription className="text-white/70">
-                              Job: {mpi.jobNumber}
-                            </CardDescription>
+                            <h3 className="text-white font-semibold text-lg">
+                              {mpi.mpiNumber} {mpi.mpiVersion ? `Rev ${mpi.mpiVersion}` : ''}
+                            </h3>
+                            <p className="text-white/70 text-sm">Job: {mpi.jobNumber}</p>
                           </div>
-                          <Badge className={`${getStatusColor(mpi.status)} border`}>
-                            {mpi.status.replace('-', ' ')}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-3">
                           <div className="flex items-center text-white/80">
                             <Building className="h-4 w-4 mr-2" />
-                            <span className="text-sm">{mpi.customerName}</span>
+                            <span className="text-sm">{mpi.customerAssemblyName}</span>
                           </div>
-                          {mpi.customerCompanyName && (
+                          {mpi.customerCompanyId && (
                             <div className="flex items-center text-white/80">
                               <User className="h-4 w-4 mr-2" />
-                              <span className="text-sm">{mpi.customerCompanyName}</span>
+                              <span className="text-sm">{mpi.customerCompanyId.companyName}</span>
+                            </div>
+                          )}
+                          {mpi.assemblyQuantity && (
+                            <div className="flex items-center text-white/80">
+                              <span className="text-sm font-medium">Qty: {mpi.assemblyQuantity}</span>
                             </div>
                           )}
                           <div className="flex items-center text-white/80">
@@ -394,30 +406,34 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         
-                        <div className="flex space-x-2 mt-4">
-                          <Link href={`/mpi/${mpi._id}/view`} className="flex-1">
-                            <Button variant="outline" size="sm" className="w-full border-white/20 text-white hover:bg-white/10">
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                          </Link>
-                          <Link href={`/mpi/${mpi._id}/edit`} className="flex-1">
-                            <Button variant="outline" size="sm" className="w-full border-white/20 text-white hover:bg-white/10">
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit
-                            </Button>
-                          </Link>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteMPI(mpi._id)}
-                            className="border-red-500/50 text-red-300 hover:bg-red-500/20"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                        <div className="flex items-center space-x-3">
+                          <Badge className={`${getStatusColor(mpi.status)} border`}>
+                            {mpi.status.replace('-', ' ')}
+                          </Badge>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Link 
+                              href={`/mpi/${mpi._id}`}
+                              className="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors inline-flex items-center justify-center"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                            <Link 
+                              href={`/mpi/${mpi._id}/edit`}
+                              className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors inline-flex items-center justify-center"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Link>
+                            <button
+                              onClick={() => openDeleteModal(mpi._id, mpi.mpiNumber)}
+                              className="p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -459,6 +475,43 @@ export default function DashboardPage() {
           </Card>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 bg-red-900/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glassmorphism-card p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="p-2 bg-red-500/20 rounded-lg mr-3">
+                <Trash2 className="h-6 w-6 text-red-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">Delete MPI</h3>
+            </div>
+            
+            <p className="text-white/80 mb-6">
+              Are you sure you want to delete <span className="font-semibold text-white">{deleteModal.mpiNumber}</span>? 
+              This action cannot be undone and will permanently remove the MPI and all associated data.
+            </p>
+            
+            <div className="flex space-x-3">
+              <Button
+                onClick={closeDeleteModal}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => deleteModal.mpiId && handleDeleteMPI(deleteModal.mpiId)}
+                variant="destructive"
+                className="flex-1"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

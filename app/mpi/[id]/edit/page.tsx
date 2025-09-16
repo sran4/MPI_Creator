@@ -94,10 +94,15 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [showAddStepModal, setShowAddStepModal] = useState(false)
-  const [showInsertTaskModal, setShowInsertTaskModal] = useState(false)
+  const [showBulkTaskModal, setShowBulkTaskModal] = useState(false)
   const [showInsertDocIdModal, setShowInsertDocIdModal] = useState(false)
   const [showAddImageModal, setShowAddImageModal] = useState(false)
   const [selectedSectionId, setSelectedSectionId] = useState('')
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([])
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [showSplitScreen, setShowSplitScreen] = useState(false)
   const [newStep, setNewStep] = useState({
     title: '',
     content: '',
@@ -275,17 +280,20 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     }
   }
 
-  const handleInsertTask = (task: Task, sectionId: string) => {
+
+  const handleBulkInsertTasks = (taskIds: string[], sectionId: string) => {
     if (!mpi) return
+    
+    const selectedTasksData = tasks.filter(task => taskIds.includes(task._id))
     
     const updatedSections = mpi.sections.map(section => {
       if (section.id === sectionId) {
         const currentContent = section.content || ''
-        // Format task content as HTML for TinyMCE
-        const formattedTask = `<p>${task.step}</p>`
+        // Format all selected tasks as HTML for TinyMCE with minimal spacing
+        const formattedTasks = selectedTasksData.map(task => `${task.step}`).join('<br>')
         const newContent = currentContent 
-          ? `${currentContent}<br><br>${formattedTask}`
-          : formattedTask
+          ? `${currentContent}<br>${formattedTasks}`
+          : formattedTasks
         
         return {
           ...section,
@@ -300,8 +308,51 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
       sections: updatedSections
     })
 
-    setShowInsertTaskModal(false)
-    toast.success('Task inserted successfully!')
+    setShowBulkTaskModal(false)
+    setSelectedTasks([])
+    toast.success(`${selectedTasksData.length} tasks inserted successfully!`)
+  }
+
+  const handleTaskSelection = (taskId: string) => {
+    setSelectedTasks(prev => 
+      prev.includes(taskId) 
+        ? prev.filter(id => id !== taskId)
+        : [...prev, taskId]
+    )
+  }
+
+  const handleSelectAllTasks = () => {
+    const filteredTasks = tasks.filter(task =>
+      task.step.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    
+    if (selectedTasks.length === filteredTasks.length) {
+      setSelectedTasks([])
+    } else {
+      setSelectedTasks(filteredTasks.map(task => task._id))
+    }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true)
+    setDragStart({
+      x: e.clientX - modalPosition.x,
+      y: e.clientY - modalPosition.y
+    })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      setModalPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      })
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
   }
 
   const handleInsertDocumentId = (docId: DocumentId, sectionId: string) => {
@@ -634,6 +685,13 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
               </div>
           <div className="flex items-center space-x-3">
               <Button 
+              onClick={() => setShowSplitScreen(!showSplitScreen)}
+              className={`${showSplitScreen ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'} text-white`}
+              >
+              <FileText className="h-4 w-4 mr-2" />
+              {showSplitScreen ? 'Hide Preview' : 'Show Preview'}
+              </Button>
+              <Button 
               onClick={() => setShowAddSectionModal(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white"
               >
@@ -658,8 +716,12 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-        {/* MPI Sections */}
-          <DragDropContext onDragEnd={handleDragEnd}>
+        {/* Main Content Area */}
+        <div className={`mt-8 ${showSplitScreen ? 'xl:flex xl:space-x-6' : ''}`}>
+          {/* Editor Section */}
+          <div className={`${showSplitScreen ? 'xl:w-3/5' : 'w-full'}`}>
+            {/* MPI Sections */}
+            <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="sections">
             {(provided: DroppableProvided) => (
               <div 
@@ -718,14 +780,15 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                         <div className="flex items-center space-x-2">
                           <Button
                             size="sm"
-                        onClick={() => {
-                          setSelectedSectionId(section.id)
-                          setShowInsertTaskModal(true)
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white border-0"
-                      >
-                        <Clipboard className="h-4 w-4 mr-1" />
-                        Insert Task
+                            onClick={() => {
+                              setSelectedSectionId(section.id)
+                              setSelectedTasks([])
+                              setShowBulkTaskModal(true)
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                          >
+                            <Clipboard className="h-4 w-4 mr-1" />
+                            Insert Tasks
                           </Button>
                           <Button
                             size="sm"
@@ -890,6 +953,79 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
               )}
             </Droppable>
           </DragDropContext>
+          </div>
+
+          {/* Print Preview Section */}
+          {showSplitScreen && (
+            <div className="xl:w-2/5 mt-8 xl:mt-0">
+              <div className="glassmorphism-card p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Print Preview</h3>
+                  <Button
+                    size="sm"
+                    onClick={() => window.open(`/mpi/${mpi._id}/print-preview`, '_blank')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Open Full Preview
+                  </Button>
+                </div>
+                <div className="bg-white rounded-lg p-6 shadow-lg max-h-[80vh] overflow-y-auto">
+                  <div className="text-black">
+                    {/* MPI Header */}
+                    <div className="text-center mb-6 border-b pb-4">
+                      <h1 className="text-2xl font-bold mb-2">MPI/Traveler Combo</h1>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <strong>MPI Number:</strong> {mpi.mpiNumber}
+                        </div>
+                        <div>
+                          <strong>Version:</strong> {mpi.mpiVersion}
+                        </div>
+                        <div>
+                          <strong>Job Number:</strong> {mpi.jobNumber}
+                        </div>
+                        <div>
+                          <strong>Assembly:</strong> {mpi.customerAssemblyName}
+                        </div>
+                        <div>
+                          <strong>Company:</strong> {mpi.customerCompanyId?.companyName}
+                        </div>
+                        <div>
+                          <strong>Quantity:</strong> {mpi.assemblyQuantity}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sections */}
+                    <div className="space-y-4">
+                      {mpi.sections.map((section, index) => (
+                        <div key={section.id} className="border-b pb-4">
+                          <div className="flex items-center mb-2">
+                            <h3 className="text-lg font-semibold text-gray-800">
+                              {section.documentId && (
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm mr-2">
+                                  {section.documentId}
+                                </span>
+                              )}
+                              {section.title}
+                            </h3>
+                          </div>
+                          {section.content && (
+                            <div 
+                              className="text-sm text-gray-700 prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: section.content }}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Add Section Modal */}
         {showAddSectionModal && (
@@ -1099,25 +1235,46 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-        {/* Insert Task Modal */}
-        {showInsertTaskModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+
+        {/* Bulk Insert Tasks Modal */}
+        {showBulkTaskModal && (
+        <div className="fixed inset-0 bg-red-900/30 backdrop-blur-sm z-50 p-2">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glassmorphism-card rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+              className="glassmorphism-card rounded-lg p-4 w-full max-w-[95vw] max-h-[95vh] overflow-y-auto"
+              style={{ 
+                position: 'absolute',
+                left: `${modalPosition.x}px`,
+                top: `${modalPosition.y}px`,
+                cursor: isDragging ? 'grabbing' : 'grab'
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-white">Insert Task</h2>
-              <Button
-                variant="ghost"
+              <div 
+                className="flex items-center justify-between mb-4 cursor-grab active:cursor-grabbing"
+                onMouseDown={handleMouseDown}
+              >
+                <div className="flex-1">
+                  <h2 className="text-xl font-semibold text-white">Bulk Insert Tasks</h2>
+                  <p className="text-white/70 text-sm mt-1">Select multiple tasks to insert at once • Drag to move</p>
+                </div>
+                <Button
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setShowInsertTaskModal(false)}
-                  className="text-white hover:bg-white/10"
+                  onClick={() => {
+                    setShowBulkTaskModal(false)
+                    setSelectedTasks([])
+                    setModalPosition({ x: 0, y: 0 })
+                  }}
+                  className="text-white hover:bg-white/10 flex-shrink-0"
                 >
                   <X className="h-4 w-4" />
-              </Button>
-            </div>
+                </Button>
+              </div>
 
               <div className="mb-4">
                 <Input
@@ -1128,29 +1285,57 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                 />
               </div>
 
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {filteredTasks.map(task => (
-                  <div key={task._id} className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Badge className="bg-purple-500 text-white">{task.categoryName}</Badge>
-                          <span className="text-white/60 text-sm">Used {task.usageCount} times</span>
-              </div>
-                        <p className="text-white/70 text-sm">{task.step}</p>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <Button
+                    size="sm"
+                    onClick={handleSelectAllTasks}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {selectedTasks.length === filteredTasks.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                  <span className="text-white/70 text-sm">
+                    {selectedTasks.length} of {filteredTasks.length} tasks selected
+                  </span>
                 </div>
-                <Button
-                        size="sm"
-                        onClick={() => handleInsertTask(task, selectedSectionId)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Insert
-                </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => {
+                      setShowBulkTaskModal(false)
+                      setSelectedTasks([])
+                    }}
+                    variant="outline"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => handleBulkInsertTasks(selectedTasks, selectedSectionId)}
+                    disabled={selectedTasks.length === 0}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Insert {selectedTasks.length} Tasks
+                  </Button>
+                </div>
               </div>
-            </div>
+
+              <div className="space-y-0.5 max-h-[600px] overflow-y-auto">
+                {filteredTasks.map(task => (
+                  <div key={task._id} className="bg-white/5 rounded p-2 border border-white/10 hover:bg-white/10 transition-colors">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedTasks.includes(task._id)}
+                        onChange={() => handleTaskSelection(task._id)}
+                        className="h-4 w-4 text-blue-600 bg-white/10 border-white/20 rounded focus:ring-blue-500 flex-shrink-0"
+                      />
+                      <Badge className="bg-purple-500 text-white flex-shrink-0 text-xs px-2 py-0.5">{task.categoryName}</Badge>
+                      <span className="text-white/60 text-xs flex-shrink-0">Used {task.usageCount}</span>
+                      <p className="text-white/70 text-sm flex-1 truncate">{task.step}</p>
+                    </div>
+                  </div>
                 ))}
-          </div>
+              </div>
             </motion.div>
         </div>
       )}
