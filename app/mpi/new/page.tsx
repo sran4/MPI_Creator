@@ -57,11 +57,11 @@ export default function NewMPIPage() {
   useEffect(() => {
     fetchCustomerCompanies()
     fetchExistingJobNumbers()
+    // Set default pages estimate
+    setValue('pages', '4')
     // Auto-generate Job No. and MPI No. on page load
     generateJobNumber()
     generateMPINumber()
-    // Set default pages estimate
-    setValue('pages', '4')
   }, [])
 
   const fetchCustomerCompanies = async () => {
@@ -158,30 +158,44 @@ export default function NewMPIPage() {
     }
     
     try {
-      // Generate fresh job number and MPI number for this submission
-      const [jobResponse, mpiResponse] = await Promise.all([
-        fetch('/api/mpi/job-numbers', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }),
-        fetch('/api/mpi/mpi-numbers', {
+      console.log('🔄 Starting MPI creation process...')
+      
+      // Use the form values for job number and MPI number (they can be edited by the user)
+      let jobNumber = data.jobNumber
+      let mpiNumber = data.mpiNumber
+      
+      // If the fields are empty, generate new numbers
+      if (!jobNumber || jobNumber.trim() === '') {
+        console.log('📞 Generating new job number...')
+        const jobResponse = await fetch('/api/mpi/job-numbers', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         })
-      ])
-
-      const jobData = await jobResponse.json()
-      const mpiData = await mpiResponse.json()
+        const jobData = await jobResponse.json()
+        jobNumber = jobData.jobNumber.replace(/([A-Z])(\d+)/, '$1-$2')
+        console.log('🔢 Generated Job Number:', jobNumber)
+      } else {
+        console.log('🔢 Using existing Job Number:', jobNumber)
+      }
       
-      // Format the numbers with dashes
-      const formattedJobNumber = jobData.jobNumber.replace(/([A-Z])(\d+)/, '$1-$2')
-      const formattedMPINumber = mpiData.mpiNumber.replace(/([A-Z]+)(\d+)/, '$1-$2')
+      if (!mpiNumber || mpiNumber.trim() === '') {
+        console.log('📞 Generating new MPI number...')
+        const mpiResponse = await fetch('/api/mpi/mpi-numbers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
+        const mpiData = await mpiResponse.json()
+        mpiNumber = mpiData.mpiNumber.replace(/([A-Z]+)(\d+)/, '$1-$2')
+        console.log('🔢 Generated MPI Number:', mpiNumber)
+      } else {
+        console.log('🔢 Using existing MPI Number:', mpiNumber)
+      }
 
       const token = localStorage.getItem('token')
       const response = await fetch('/api/mpi', {
@@ -192,9 +206,9 @@ export default function NewMPIPage() {
         },
         body: JSON.stringify({
           customerCompanyId: data.customerCompanyId,
-          jobNumber: formattedJobNumber,
+          jobNumber: jobNumber,
           oldJobNumber: data.oldJobNumber,
-          mpiNumber: formattedMPINumber,
+          mpiNumber: mpiNumber,
           mpiVersion: data.mpiVersion,
           customerAssemblyName: data.customerAssemblyName,
           assemblyRev: data.assemblyRev,
@@ -314,8 +328,8 @@ export default function NewMPIPage() {
                                 <Input
                                   id="jobNumber"
                                   type="text"
-                                  className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
-                                  {...register('jobNumber', { required: 'Job number is required' })}
+                                  className="bg-white/10 border-white/20 text-white"
+                                  {...register('jobNumber')}
                                 />
                                 <Button
                                   type="button"
@@ -327,9 +341,6 @@ export default function NewMPIPage() {
                                   <Plus className="h-4 w-4" />
                                 </Button>
                               </div>
-                              {errors.jobNumber && (
-                                <p className="text-red-400 text-sm">{errors.jobNumber.message}</p>
-                              )}
                             </div>
   
                             <div className="space-y-2">
@@ -337,7 +348,7 @@ export default function NewMPIPage() {
                                 Old Job No.
                               </Label>
                               <Select onValueChange={(value) => setValue('oldJobNumber', value === 'none' ? '' : value)}>
-                                <SelectTrigger className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed">
+                                <SelectTrigger className="bg-white/10 border-white/20 text-white ">
                                   <SelectValue placeholder="Select old job number (optional)" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -362,8 +373,8 @@ export default function NewMPIPage() {
                                 <Input
                                   id="mpiNumber"
                                   type="text"
-                                  className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
-                                  {...register('mpiNumber', { required: 'MPI number is required' })}
+                                  className="bg-white/10 border-white/20 text-white"
+                                  {...register('mpiNumber')}
                                 />
                                 <Button
                                   type="button"
@@ -375,9 +386,6 @@ export default function NewMPIPage() {
                                   <Plus className="h-4 w-4" />
                                 </Button>
                               </div>
-                              {errors.mpiNumber && (
-                                <p className="text-red-400 text-sm">{errors.mpiNumber.message}</p>
-                              )}
                             </div>
   
                             <div className="space-y-2">
@@ -387,7 +395,7 @@ export default function NewMPIPage() {
                               <Input
                                 id="mpiVersion"
                                 type="text"
-                                className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
+                                className="bg-white/10 border-white/20 text-white "
                                 {...register('mpiVersion', { required: 'MPI revision is required' })}
                               />
                               {errors.mpiVersion && (
@@ -403,7 +411,7 @@ export default function NewMPIPage() {
                                 Customer Company <span className="text-red-400">*</span>
                               </Label>
                               <Select onValueChange={(value) => setValue('customerCompanyId', value)}>
-                                <SelectTrigger className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed">
+                                <SelectTrigger className="bg-white/10 border-white/20 text-white ">
                                   <SelectValue placeholder="Select customer company" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -432,7 +440,7 @@ export default function NewMPIPage() {
                               <Input
                                 id="assemblyQuantity"
                                 type="text"
-                                className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
+                                className="bg-white/10 border-white/20 text-white "
                                 {...register('assemblyQuantity', { required: 'Assembly quantity is required' })}
                               />
                               {errors.assemblyQuantity && (
@@ -450,7 +458,7 @@ export default function NewMPIPage() {
                               <Input
                                 id="customerAssemblyName"
                                 type="text"
-                                className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
+                                className="bg-white/10 border-white/20 text-white "
                                 {...register('customerAssemblyName', { required: 'Customer assembly name is required' })}
                               />
                               {errors.customerAssemblyName && (
@@ -465,7 +473,7 @@ export default function NewMPIPage() {
                               <Input
                                 id="assemblyRev"
                                 type="text"
-                                className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
+                                className="bg-white/10 border-white/20 text-white "
                                 {...register('assemblyRev', { required: 'Assembly revision is required' })}
                               />
                               {errors.assemblyRev && (
@@ -483,7 +491,7 @@ export default function NewMPIPage() {
                               <Input
                                 id="drawingName"
                                 type="text"
-                                className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
+                                className="bg-white/10 border-white/20 text-white "
                                 {...register('drawingName', { required: 'Drawing name is required' })}
                               />
                               {errors.drawingName && (
@@ -498,7 +506,7 @@ export default function NewMPIPage() {
                               <Input
                                 id="drawingRev"
                                 type="text"
-                                className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
+                                className="bg-white/10 border-white/20 text-white "
                                 {...register('drawingRev', { required: 'Drawing revision is required' })}
                               />
                               {errors.drawingRev && (
@@ -516,7 +524,7 @@ export default function NewMPIPage() {
                               <Input
                                 id="kitReceivedDate"
                                 type="date"
-                                className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
+                                className="bg-white/10 border-white/20 text-white "
                                 {...register('kitReceivedDate', { required: 'Kit received date is required' })}
                               />
                               {errors.kitReceivedDate && (
@@ -531,7 +539,7 @@ export default function NewMPIPage() {
                               <Input
                                 id="dateReleased"
                                 type="date"
-                                className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
+                                className="bg-white/10 border-white/20 text-white "
                                 {...register('dateReleased', { required: 'Date released is required' })}
                                 defaultValue={new Date().toISOString().split('T')[0]}
                               />
@@ -550,9 +558,8 @@ export default function NewMPIPage() {
                             <Input
                               id="pages"
                               type="text"
-                              className="bg-white/10 border-white/20 text-white opacity-60 cursor-not-allowed"
-                              disabled={true}
-                              value="4"
+                              placeholder="4"
+                              className="bg-white/10 border-white/20 text-white"
                               {...register('pages', { required: 'Pages is required' })}
                             />
                           </div>

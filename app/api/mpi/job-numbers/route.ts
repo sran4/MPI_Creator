@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
     const engineerId = decoded.userId
 
+    console.log('🔍 Job Numbers API - Engineer ID:', engineerId)
+
     // Generate unique job number starting with "U"
     let jobNumber = ''
     let counter = 1
@@ -58,14 +60,22 @@ export async function POST(request: NextRequest) {
       // Format: U + 6-digit number with leading zeros
       jobNumber = `U${counter.toString().padStart(6, '0')}`
       
+      console.log(`🔍 Checking job number: ${jobNumber}`)
+      
       // Check if this job number already exists
       const existingMPI = await MPI.findOne({ jobNumber })
+      console.log(`🔍 Existing job number found:`, existingMPI ? 'YES' : 'NO')
+      
       if (!existingMPI) {
         isUnique = true
+        console.log(`✅ Unique job number found: ${jobNumber}`)
       } else {
         counter++
+        console.log(`❌ Job number ${jobNumber} exists, trying ${counter}`)
       }
     }
+
+    console.log(`🎯 Final job number: ${jobNumber}`)
 
     return NextResponse.json({
       jobNumber

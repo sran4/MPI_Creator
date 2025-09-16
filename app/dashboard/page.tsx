@@ -270,10 +270,10 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-6 py-8 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div>
+            <div>
             <h1 className="text-3xl font-bold text-white mb-2">{user?.userType === "admin" ? "Admin Dashboard" : "Engineer Dashboard"}</h1>
             <p className="text-white opacity-80">Manage your MPI/Traveler Combo documents and tasks</p>
-          </div>
+            </div>
           <div className="flex space-x-4">
             <Link href="/mpi/new">
               <Button 
@@ -320,13 +320,13 @@ export default function DashboardPage() {
                     <p className="text-white/60 text-sm mt-1">
                       {user.email}
                     </p>
-                  </div>
-                </div>
+            </div>
+          </div>
                 <div className="text-right">
                   <p className="text-white/60 text-sm">Last login</p>
                   <p className="text-white font-medium">{new Date().toLocaleDateString()}</p>
                 </div>
-              </div>
+        </div>
             </CardContent>
           </Card>
         )}
@@ -389,9 +389,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex space-x-1 mb-6">
+          <div className="flex space-x-1 mb-6">
           <button
-            onClick={() => setActiveTab('mpis')}
+              onClick={() => setActiveTab('mpis')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'mpis' ? 'bg-red-500 text-white' : 'text-white hover:bg-white/20'
             }`}
@@ -400,7 +400,7 @@ export default function DashboardPage() {
             MPI/Traveler Combos
           </button>
           <button
-            onClick={() => setActiveTab('customers')}
+              onClick={() => setActiveTab('customers')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'customers' ? 'bg-red-500 text-white' : 'text-white hover:bg-white/20'
             }`}
@@ -417,12 +417,12 @@ export default function DashboardPage() {
             <Settings className="h-4 w-4 mr-2 inline" />
             Settings
           </button>
-        </div>
+          </div>
 
         {/* Content based on active tab */}
         {activeTab === 'mpis' && (
           <div>
-            {/* Search and Filter */}
+        {/* Search and Filter */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-white/50" />
@@ -434,9 +434,9 @@ export default function DashboardPage() {
                   className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-white/50 focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
                 />
               </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-red-400 focus:ring-red-400/20 backdrop-blur-sm"
               >
                 <option value="all" className="bg-red-500/20 text-white">All Status</option>
@@ -444,8 +444,8 @@ export default function DashboardPage() {
                 <option value="in-review" className="bg-red-500/20 text-white">In Review</option>
                 <option value="approved" className="bg-red-500/20 text-white">Approved</option>
                 <option value="rejected" className="bg-red-500/20 text-white">Rejected</option>
-              </select>
-            </div>
+                </select>
+              </div>
 
             {/* MPIs List */}
             {filteredMPIs.length === 0 ? (
@@ -461,17 +461,17 @@ export default function DashboardPage() {
                   </p>
                   <Link href="/mpi/new">
                     <Button className="bg-red-500 hover:bg-red-600 text-white">
-                      <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-2" />
                       Create Your First MPI/Traveler Combo
-                    </Button>
+                  </Button>
                   </Link>
                 </CardContent>
               </Card>
             ) : (
               <div className="space-y-3">
                 {filteredMPIs.map((mpi) => (
-                  <motion.div
-                    key={mpi._id}
+                <motion.div
+                  key={mpi._id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
@@ -488,49 +488,49 @@ export default function DashboardPage() {
                           <div className="flex items-center text-white/80">
                             <Building className="h-4 w-4 mr-2" />
                             <span className="text-sm">{mpi.customerAssemblyName}</span>
-                          </div>
+                            </div>
                           {mpi.customerCompanyId && (
                             <div className="flex items-center text-white/80">
                               <User className="h-4 w-4 mr-2" />
                               <span className="text-sm">{mpi.customerCompanyId.companyName}</span>
-                            </div>
+                              </div>
                           )}
                           {mpi.assemblyQuantity && (
                             <div className="flex items-center text-white/80">
                               <span className="text-sm font-medium">Qty: {mpi.assemblyQuantity}</span>
-                            </div>
+                              </div>
                           )}
                           <div className="flex items-center text-white/80">
                             <Calendar className="h-4 w-4 mr-2" />
                             <span className="text-sm">
                               {new Date(mpi.updatedAt).toLocaleDateString()}
                             </span>
+                            </div>
                           </div>
-                        </div>
                         
                         <div className="flex items-center space-x-3">
                           <Badge className={`${getStatusColor(mpi.status)} border`}>
                             {mpi.status.replace('-', ' ')}
                           </Badge>
                           
-                          <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2">
                             <Link 
                               href={`/mpi/${mpi._id}`}
                               className="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors inline-flex items-center justify-center"
-                            >
-                              <Eye className="h-4 w-4" />
+                        >
+                          <Eye className="h-4 w-4" />
                             </Link>
                             <Link 
                               href={`/mpi/${mpi._id}/edit`}
                               className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors inline-flex items-center justify-center"
-                            >
-                              <Edit className="h-4 w-4" />
+                          >
+                            <Edit className="h-4 w-4" />
                             </Link>
                             <button
                               onClick={() => openDeleteModal(mpi._id, mpi.mpiNumber)}
                               className="p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
+                          >
+                            <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
                         </div>
@@ -555,7 +555,7 @@ export default function DashboardPage() {
                 <Button className="bg-red-500 hover:bg-red-600 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Customer
-                </Button>
+                          </Button>
               </Link>
             </CardContent>
           </Card>
@@ -588,10 +588,10 @@ export default function DashboardPage() {
                   <div>
                     <Label className="text-white/70 text-sm">Title</Label>
                     <p className="text-white font-medium">{user?.title || 'Not specified'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
             {/* Security Settings */}
             <Card className="glassmorphism-card">
@@ -615,8 +615,8 @@ export default function DashboardPage() {
                     Change Password
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
           </div>
         )}
       </div>
@@ -691,7 +691,7 @@ export default function DashboardPage() {
                     {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-              </div>
+                          </div>
 
               {/* New Password */}
               <div className="space-y-2">
@@ -713,8 +713,8 @@ export default function DashboardPage() {
                   >
                     {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
-                </div>
-              </div>
+                            </div>
+                              </div>
 
               {/* Confirm New Password */}
               <div className="space-y-2">
@@ -736,12 +736,12 @@ export default function DashboardPage() {
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
-                </div>
-              </div>
-            </div>
+                              </div>
+                            </div>
+                          </div>
             
             <div className="flex space-x-3 mt-6">
-              <Button
+                          <Button
                 onClick={() => {
                   setPasswordChangeModal(false)
                   setCurrentPassword('')
@@ -752,17 +752,17 @@ export default function DashboardPage() {
                 className="flex-1"
               >
                 Cancel
-              </Button>
-              <Button
+                          </Button>
+                          <Button
                 onClick={handlePasswordChange}
                 disabled={isChangingPassword}
                 className="flex-1 bg-red-500 hover:bg-red-600 text-white"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {isChangingPassword ? 'Changing...' : 'Change Password'}
-              </Button>
-            </div>
-          </div>
+                          </Button>
+                        </div>
+                      </div>
         </div>
       )}
     </div>

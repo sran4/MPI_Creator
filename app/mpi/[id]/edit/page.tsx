@@ -1002,7 +1002,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                       {mpi.sections.map((section, index) => (
                         <div key={section.id} className="border-b pb-4">
                           <div className="flex items-center mb-2">
-                            <h3 className="text-lg font-semibold text-gray-800">
+                            <h3 className="text-lg font-semibold text-white">
                               {section.documentId && (
                                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm mr-2">
                                   {section.documentId}
@@ -1013,7 +1013,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                           </div>
                           {section.content && (
                             <div 
-                              className="text-sm text-gray-700 prose prose-sm max-w-none"
+                              className="text-sm text-white prose prose-sm max-w-none"
                               dangerouslySetInnerHTML={{ __html: section.content }}
                             />
                           )}
