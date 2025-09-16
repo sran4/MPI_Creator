@@ -597,92 +597,61 @@ export default function NewMPIPage() {
                           <div className="bg-white rounded-lg p-6 shadow-lg max-h-[80vh] overflow-y-auto">
                             <div className="text-black">
                               {/* MPI Header */}
-                              <div className="text-center mb-6 border-b pb-4">
-                                <h1 className="text-2xl font-bold mb-2">MPI/Traveler Combo</h1>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
+                                <h1 className="text-3xl font-bold mb-4 text-gray-900">Manufacturing Process Instructions</h1>
+                              </div>
+
+                              {/* Assembly Details Section */}
+                              <div className="mb-8 border-2 border-gray-300 rounded-lg p-6">
+                                <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Assembly Details</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
                                   <div>
-                                    <strong>MPI Number:</strong> {watch('mpiNumber') || 'MPI-000001'}
+                                    <span className="font-semibold">MPI Number:</span> {watch('mpiNumber') || 'MPI-000001'}
                                   </div>
                                   <div>
-                                    <strong>Version:</strong> {watch('mpiVersion') || 'Rev A'}
+                                    <span className="font-semibold">MPI Rev:</span> {watch('mpiVersion') || 'A'}
                                   </div>
                                   <div>
-                                    <strong>Job Number:</strong> {watch('jobNumber') || 'U-000001'}
+                                    <span className="font-semibold">Job No:</span> {watch('jobNumber') || 'U-000001'}
                                   </div>
                                   <div>
-                                    <strong>Assembly:</strong> {watch('customerAssemblyName') || 'Not specified'}
+                                    <span className="font-semibold">Old Job No:</span> {watch('oldJobNumber') || 'N/A'}
                                   </div>
                                   <div>
-                                    <strong>Company:</strong> {customerCompanies.find(c => c._id === watch('customerCompanyId'))?.companyName || 'Not selected'}
+                                    <span className="font-semibold">Customer Assembly Rev:</span> {watch('assemblyRev') || 'N/A'}
                                   </div>
                                   <div>
-                                    <strong>Quantity:</strong> {watch('assemblyQuantity') || '1'}
+                                    <span className="font-semibold">Customer:</span> {customerCompanies.find(c => c._id === watch('customerCompanyId'))?.companyName || 'Not selected'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Customer Assembly Name:</span> {watch('customerAssemblyName') || 'Not specified'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Date Released:</span> {watch('dateReleased') || 'N/A'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Pages:</span> {watch('pages') || '4'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Form ID:</span> N/A
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Form Rev:</span> N/A
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Kit receive date:</span> {watch('kitReceivedDate') ? new Date(watch('kitReceivedDate')).toLocaleDateString() : 'N/A'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Kit release date:</span> {watch('dateReleased') || 'N/A'}
                                   </div>
                                 </div>
                               </div>
-  
-                              {/* Customer Information Section */}
-                              <div className="mb-6">
-                                <h2 className="text-xl font-bold mb-4 text-center border-b pb-2">CUSTOMER INFORMATION</h2>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                  <div>
-                                    <strong>Job No.:</strong> {watch('jobNumber') || 'U-000001'}
-                                  </div>
-                                  <div>
-                                    <strong>Old Job No.:</strong> {watch('oldJobNumber') || 'N/A'}
-                                  </div>
-                                  <div>
-                                    <strong>MPI No.:</strong> {watch('mpiNumber') || 'MPI-000001'}
-                                  </div>
-                                  <div>
-                                    <strong>MPI Rev:</strong> {watch('mpiVersion') || 'A'}
-                                  </div>
-                                  <div>
-                                    <strong>Customer Name:</strong> {customerCompanies.find(c => c._id === watch('customerCompanyId'))?.companyName || 'Not selected'}
-                                  </div>
-                                  <div>
-                                    <strong>Assembly Quantity:</strong> {watch('assemblyQuantity') || '1'}
-                                  </div>
-                                  <div>
-                                    <strong>Customer Assembly Name:</strong> {watch('customerAssemblyName') || 'Not specified'}
-                                  </div>
-                                  <div>
-                                    <strong>Assembly Rev:</strong> {watch('assemblyRev') || 'A'}
-                                  </div>
-                                  <div>
-                                    <strong>Drawing Name:</strong> {watch('drawingName') || 'Not specified'}
-                                  </div>
-                                  <div>
-                                    <strong>Drawing Rev:</strong> {watch('drawingRev') || 'A'}
-                                  </div>
-                                  <div>
-                                    <strong>Kit Received Date:</strong> {watch('kitReceivedDate') || 'MM/DD/YYYY'}
-                                  </div>
-                                  <div>
-                                    <strong>Date Released:</strong> {watch('dateReleased') || 'MM/DD/YYYY'}
-                                  </div>
-                                  <div className="col-span-2">
-                                    <strong>Pages:</strong> {watch('pages') || '1'}
-                                  </div>
-                                </div>
-                              </div>
-  
-                              {/* Sample Process Section */}
-                              <div className="border border-gray-300 rounded-lg p-4">
-                                <h3 className="text-lg font-semibold mb-3">Sample Process Section</h3>
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex items-start space-x-3">
-                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold min-w-[60px] text-center">
-                                      Step 1
-                                    </span>
-                                    <p>Sample process step description will appear here...</p>
-                                  </div>
-                                  <div className="flex items-start space-x-3">
-                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold min-w-[60px] text-center">
-                                      Step 2
-                                    </span>
-                                    <p>Another process step will be displayed here...</p>
-                                  </div>
+
+                              {/* Applicable Documents Section */}
+                              <div className="mb-6 border-2 border-gray-300 rounded-lg p-6">
+                                <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Applicable Documents</h2>
+                                <div className="text-gray-500 italic">
+                                  No content added to this section yet.
                                 </div>
                               </div>
   

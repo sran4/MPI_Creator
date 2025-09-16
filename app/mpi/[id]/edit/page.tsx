@@ -973,49 +973,88 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                 <div className="bg-white rounded-lg p-6 shadow-lg max-h-[80vh] overflow-y-auto">
                   <div className="text-black">
                     {/* MPI Header */}
-                    <div className="text-center mb-6 border-b pb-4">
-                      <h1 className="text-2xl font-bold mb-2">MPI/Traveler Combo</h1>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
+                      <h1 className="text-3xl font-bold mb-4 text-gray-900">Manufacturing Process Instructions</h1>
+                    </div>
+
+                    {/* Assembly Details Section */}
+                    <div className="mb-8 border-2 border-gray-300 rounded-lg p-6">
+                      <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Assembly Details</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
                         <div>
-                          <strong>MPI Number:</strong> {mpi.mpiNumber}
+                          <span className="font-semibold">MPI Number:</span> {mpi.mpiNumber}
                         </div>
                         <div>
-                          <strong>Version:</strong> {mpi.mpiVersion}
+                          <span className="font-semibold">MPI Rev:</span> {mpi.mpiVersion}
                         </div>
                         <div>
-                          <strong>Job Number:</strong> {mpi.jobNumber}
+                          <span className="font-semibold">Job No:</span> {mpi.jobNumber}
                         </div>
                         <div>
-                          <strong>Assembly:</strong> {mpi.customerAssemblyName}
+                          <span className="font-semibold">Old Job No:</span> {mpi.oldJobNumber || 'N/A'}
                         </div>
                         <div>
-                          <strong>Company:</strong> {mpi.customerCompanyId?.companyName}
+                          <span className="font-semibold">Customer Assembly Rev:</span> {mpi.assemblyRev || 'N/A'}
                         </div>
                         <div>
-                          <strong>Quantity:</strong> {mpi.assemblyQuantity}
+                          <span className="font-semibold">Customer:</span> {mpi.customerCompanyId?.companyName || 'N/A'}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Customer Assembly Name:</span> {mpi.customerAssemblyName || 'N/A'}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Date Released:</span> {mpi.dateReleased || 'N/A'}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Pages:</span> {mpi.totalPages || mpi.pages || 'N/A'}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Form ID:</span> N/A
+                        </div>
+                        <div>
+                          <span className="font-semibold">Form Rev:</span> N/A
+                        </div>
+                        <div>
+                          <span className="font-semibold">Kit receive date:</span> {mpi.kitReceivedDate ? new Date(mpi.kitReceivedDate).toLocaleDateString() : 'N/A'}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Kit release date:</span> {mpi.dateReleased || 'N/A'}
                         </div>
                       </div>
                     </div>
 
+                    {/* Applicable Documents Section */}
+                    <div className="mb-6 border-2 border-gray-300 rounded-lg p-6">
+                      <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Applicable Documents</h2>
+                      <div className="text-gray-500 italic">
+                        No content added to this section yet.
+                      </div>
+                    </div>
+
                     {/* Sections */}
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {mpi.sections.map((section, index) => (
-                        <div key={section.id} className="border-b pb-4">
-                          <div className="flex items-center mb-2">
-                            <h3 className="text-lg font-semibold text-white">
-                              {section.documentId && (
-                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm mr-2">
-                                  {section.documentId}
-                                </span>
-                              )}
-                              {section.title}
-                            </h3>
-                          </div>
+                        <div key={section.id} className="border-2 border-gray-300 rounded-lg p-6">
+                          <h3 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2 flex justify-between items-center">
+                            <span>{section.title}</span>
+                            {section.documentId && (
+                              <span className="px-3 py-1 bg-blue-100 border border-blue-300 rounded-lg text-blue-800 text-sm font-medium">
+                                {section.documentId}
+                              </span>
+                            )}
+                          </h3>
                           {section.content && (
-                            <div 
-                              className="text-sm text-white prose prose-sm max-w-none"
-                              dangerouslySetInnerHTML={{ __html: section.content }}
-                            />
+                            <div className="text-gray-900">
+                              <div 
+                                className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4"
+                                dangerouslySetInnerHTML={{ __html: section.content }}
+                              />
+                            </div>
+                          )}
+                          {!section.content && (
+                            <div className="text-gray-500 italic">
+                              No content added to this section yet.
+                            </div>
                           )}
                         </div>
                       ))}

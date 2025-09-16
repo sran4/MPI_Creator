@@ -103,7 +103,7 @@ export default function Navbar() {
                 MPI Traveler Combo Creator
               </Link>
             </div>
-            <div className="hidden xl:flex items-center justify-center space-x-2 2xl:space-x-4">
+            <div className="hidden items-center justify-center space-x-2 2xl:space-x-4">
               <Link href="/login">
                 <Button className="bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-lg flex items-center justify-center">
                   Sign In
@@ -115,8 +115,8 @@ export default function Navbar() {
                 </Button>
               </Link>
             </div>
-            {/* Mobile/Tablet/Desktop menu button for loading state */}
-            <div className="xl:hidden">
+            {/* Burger menu button for loading state */}
+            <div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -143,8 +143,8 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Navigation - Only visible on XL screens (1280px+) */}
-          <div className="hidden xl:flex items-center justify-center space-x-2 2xl:space-x-4">
+          {/* Desktop Navigation - Hidden on all screens to force burger menu */}
+          <div className="hidden items-center justify-center space-x-2 2xl:space-x-4">
             {user ? (
               <>
                 {/* Navigation Links */}
@@ -200,8 +200,8 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile/Tablet/Desktop menu button - Shows on all screens < 1280px */}
-          <div className="xl:hidden">
+          {/* Burger menu button - Shows on all screen sizes */}
+          <div>
             <Button
               variant="ghost"
               size="sm"
@@ -213,9 +213,9 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile/Tablet/Desktop Navigation - Shows on all screens < 1280px */}
+        {/* Burger menu navigation - Shows on all screen sizes */}
         {isMobileMenuOpen && (
-          <div className="xl:hidden border-t border-white/20">
+          <div className="border-t border-white/20">
             <div className="px-2 pt-2 pb-3 space-y-1">
               {user ? (
                 <>
