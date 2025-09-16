@@ -226,7 +226,7 @@ export default function NewMPIPage() {
   if (isLoadingCompanies) {
     return (
       <div className="min-h-screen gradient-bg dark:gradient-bg flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">Loading Companies...</div>
       </div>
     )
   }
@@ -276,12 +276,7 @@ export default function NewMPIPage() {
                     <div className={`${showPreview ? 'xl:w-3/5' : 'w-full'} flex flex-col`}>
                       {/* Header Section - Professional Layout */}
                       <div className="bg-white/5 border border-white/10 rounded-lg p-6 max-h-[80vh] overflow-y-auto">
-                        <div className="mb-6 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
-                          <p className="text-blue-200 text-sm">
-                            <strong>Note:</strong> All fields are required. Fill out the form completely to create your MPI document.
-                          </p>
-                        </div>
-                        
+                                                
                         {/* Optimized Input Layout - 2 Inputs Per Row */}
                         <div className="space-y-6">
                           {/* Row 1: Job No. & Old Job No. */}
