@@ -12,6 +12,7 @@ import {
   Plus, 
   Save, 
   ArrowLeft, 
+  ArrowUp,
   FileText,
   Folder,
   Users,
@@ -23,11 +24,12 @@ import {
   FileImage,
   Link as LinkIcon,
   Clipboard,
-  GripVertical
+  GripVertical,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided, DraggableStateSnapshot } from '@hello-pangea/dnd'
 import { Editor } from '@tinymce/tinymce-react'
 
 interface MPI {
@@ -508,6 +510,78 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     toast.success('Section reordered successfully!')
   }
 
+  const moveSectionUp = (sectionId: string) => {
+    console.log('🔼 Move section up called for:', sectionId)
+    if (!mpi) {
+      console.log('❌ No MPI data')
+      return
+    }
+
+    const currentIndex = mpi.sections.findIndex(s => s.id === sectionId)
+    console.log('📍 Current index:', currentIndex, 'Total sections:', mpi.sections.length)
+    
+    if (currentIndex <= 0) {
+      toast.error('Section is already at the top')
+      return
+    }
+
+    // Create a completely new array to force React re-render
+    const newSections = mpi.sections.map((section, index) => {
+      if (index === currentIndex) {
+        return mpi.sections[currentIndex - 1]
+      } else if (index === currentIndex - 1) {
+        return mpi.sections[currentIndex]
+      } else {
+        return section
+      }
+    })
+
+    console.log('🔄 Updated sections:', newSections.map(s => ({ title: s.title, id: s.id })))
+
+    setMpi({
+      ...mpi,
+      sections: newSections
+    })
+
+    toast.success('Section moved up!')
+  }
+
+  const moveSectionDown = (sectionId: string) => {
+    console.log('🔽 Move section down called for:', sectionId)
+    if (!mpi) {
+      console.log('❌ No MPI data')
+      return
+    }
+
+    const currentIndex = mpi.sections.findIndex(s => s.id === sectionId)
+    console.log('📍 Current index:', currentIndex, 'Total sections:', mpi.sections.length)
+    
+    if (currentIndex >= mpi.sections.length - 1) {
+      toast.error('Section is already at the bottom')
+      return
+    }
+
+    // Create a completely new array to force React re-render
+    const newSections = mpi.sections.map((section, index) => {
+      if (index === currentIndex) {
+        return mpi.sections[currentIndex + 1]
+      } else if (index === currentIndex + 1) {
+        return mpi.sections[currentIndex]
+      } else {
+        return section
+      }
+    })
+
+    console.log('🔄 Updated sections:', newSections.map(s => ({ title: s.title, id: s.id })))
+
+    setMpi({
+      ...mpi,
+      sections: newSections
+    })
+
+    toast.success('Section moved down!')
+  }
+
   const handleContentChange = (sectionId: string, newContent: string) => {
     if (!mpi) return
 
@@ -721,36 +795,46 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
           {/* Editor Section */}
           <div className={`${showSplitScreen ? 'xl:w-3/5' : 'w-full'}`}>
             {/* MPI Sections */}
-            <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="sections">
-            {(provided: DroppableProvided) => (
-              <div 
-                {...provided.droppableProps} 
-                ref={provided.innerRef}
-                className="space-y-6"
-              >
+            <div className="space-y-6">
                 {mpi.sections.map((section, sectionIndex) => {
-                  console.log('🎨 Editor - Section:', section.title, 'Document ID:', section.documentId)
+                  console.log('🎨 Editor - Section:', section.title, 'Index:', sectionIndex, 'ID:', section.id, 'Order:', section.order)
                   return (
-                  <Draggable key={section.id} draggableId={section.id} index={sectionIndex}>
-                    {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
                         <motion.div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
+                          key={`${section.id}-${sectionIndex}`}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: sectionIndex * 0.1 }}
-                          className={`${snapshot.isDragging ? 'rotate-2 scale-105' : ''} transition-transform duration-200`}
+                          transition={{ delay: sectionIndex * 0.1 }}
+                          className="transition-transform duration-200"
                         >
               <Card className="glassmorphism-card glassmorphism-card-hover">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div 
-                        {...provided.dragHandleProps}
-                        className="mr-3 cursor-grab active:cursor-grabbing text-white/50 hover:text-white/80 transition-colors"
-                      >
-                        <GripVertical className="h-6 w-6" />
+                      <div className="mr-3 flex flex-col space-y-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            console.log('🔼 Up button clicked for section:', section.id, 'at index:', sectionIndex)
+                            moveSectionUp(section.id)
+                          }}
+                          disabled={sectionIndex === 0}
+                          className="text-white/50 hover:text-white/80 hover:bg-white/10 p-1 h-6 w-6"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            console.log('🔽 Down button clicked for section:', section.id, 'at index:', sectionIndex)
+                            moveSectionDown(section.id)
+                          }}
+                          disabled={sectionIndex === mpi.sections.length - 1}
+                          className="text-white/50 hover:text-white/80 hover:bg-white/10 p-1 h-6 w-6"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
                       </div>
                       <Folder className="h-6 w-6 mr-3 text-purple-400" />
                       <div className="flex-1 flex items-center justify-between">
@@ -963,16 +1047,10 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                     </div>
                   </CardContent>
               </Card>
-                      </motion.div>
-                    )}
-                  </Draggable>
+                        </motion.div>
                   )
                 })}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+            </div>
           </div>
 
           {/* Print Preview Section */}
@@ -1523,6 +1601,27 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                       </div>
                     )}
                       </div>
+
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-8 right-8 z-50 flex flex-col space-y-3">
+        {/* Scroll to Top Button */}
+        <Button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="bg-gray-600 hover:bg-gray-700 text-white shadow-lg shadow-gray-500/25 rounded-full p-3 h-12 w-12 flex items-center justify-center"
+          title="Scroll to Top"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </Button>
+        
+        {/* Add Section Button */}
+        <Button
+          onClick={() => setShowAddSectionModal(true)}
+          className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/25 rounded-full p-4 h-14 w-14 flex items-center justify-center"
+          title="Add New Section"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </div>
     </div>
   )
 }
