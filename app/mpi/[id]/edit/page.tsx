@@ -213,6 +213,28 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     }
   }
 
+  const calculateTotalPages = () => {
+    if (!mpi) return 1
+    
+    // Base pages: Header + Assembly Details
+    let totalPages = 2
+    
+    // Add pages for each section based on content length
+    mpi.sections.forEach(section => {
+      if (section.content && section.content.trim()) {
+        // Rough calculation: ~500 characters per page
+        const contentLength = section.content.length
+        const sectionPages = Math.max(1, Math.ceil(contentLength / 500))
+        totalPages += sectionPages
+      } else {
+        // Empty section still takes at least 1 page
+        totalPages += 1
+      }
+    })
+    
+    return totalPages
+  }
+
   const handleSaveMPI = async () => {
     if (!mpi) return
 
@@ -220,6 +242,15 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     mpi.sections.forEach((section, index) => {
       console.log(`Section ${index + 1}:`, section.title, 'Order:', section.order, 'Document ID:', section.documentId)
     })
+
+    // Calculate and update total pages
+    const calculatedPages = calculateTotalPages()
+    const updatedMpi = {
+      ...mpi,
+      pages: calculatedPages
+    }
+    
+    console.log('📄 Calculated total pages:', calculatedPages)
 
     setIsSaving(true)
     try {
@@ -230,13 +261,15 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(mpi)
+        body: JSON.stringify(updatedMpi)
       })
 
       if (response.ok) {
         const responseData = await response.json()
         console.log('✅ MPI saved successfully:', responseData)
-        toast.success('MPI saved successfully!')
+        // Update local state with new page count
+        setMpi(updatedMpi)
+        toast.success(`MPI saved successfully! Total pages: ${calculatedPages}`)
       } else {
         const errorData = await response.json()
         console.error('❌ Failed to save MPI:', errorData)
@@ -742,7 +775,50 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-4">
+    <>
+      {/* CSS for live preview page numbering and Form ID */}
+      <style jsx global>{`
+        .live-preview-container {
+          counter-reset: page;
+          position: relative;
+        }
+        .live-preview-container::after {
+          content: "Form ID: ${mpi?.formId || mpi?._id || 'N/A'}";
+          position: fixed;
+          bottom: 0.5in;
+          left: 0.5in;
+          font-size: 10pt;
+          color: #666;
+          font-family: Arial, sans-serif;
+          z-index: 1000;
+        }
+        .live-preview-container::before {
+          content: "Page " counter(page) " of " counter(pages);
+          position: fixed;
+          bottom: 0.5in;
+          right: 0.5in;
+          font-size: 10pt;
+          color: #666;
+          font-family: Arial, sans-serif;
+          z-index: 1000;
+        }
+        .live-preview-section {
+          break-inside: avoid;
+          margin-bottom: 1rem;
+          page-break-inside: avoid;
+        }
+        .live-preview-section:last-child {
+          margin-bottom: 0;
+        }
+        .live-preview-page-break {
+          page-break-before: always;
+        }
+        .live-preview-no-break {
+          page-break-before: avoid;
+        }
+      `}</style>
+      
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-4">
         <div className="w-full">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -792,10 +868,10 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
           </div>
 
         {/* Main Content Area */}
-        <div className={`mt-8 ${showSplitScreen ? 'flex space-x-6' : ''}`}>
+        <div className={`mt-8 ${showSplitScreen ? 'flex space-x-4 h-[calc(100vh-200px)]' : ''}`}>
           {/* Editor Section */}
-          <div className={`${showSplitScreen ? 'w-3/5' : 'w-full'}`}>
-            {/* MPI Sections */}
+          <div className={`${showSplitScreen ? 'w-1/2 overflow-y-auto' : 'w-full'}`}>
+        {/* MPI Sections */}
             <div className="space-y-6">
                 {mpi.sections.map((section, sectionIndex) => {
                   console.log('🎨 Editor - Section:', section.title, 'Index:', sectionIndex, 'ID:', section.id, 'Order:', section.order)
@@ -804,7 +880,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                           key={`${section.id}-${sectionIndex}`}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: sectionIndex * 0.1 }}
+                        transition={{ delay: sectionIndex * 0.1 }}
                           className="transition-transform duration-200"
                         >
               <Card className="glassmorphism-card glassmorphism-card-hover">
@@ -864,71 +940,71 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                       </div>
                         <div className="flex items-center space-x-2">
                           <div className="relative group">
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setSelectedSectionId(section.id)
+                          <Button
+                            size="sm"
+                        onClick={() => {
+                          setSelectedSectionId(section.id)
                                 setSelectedTasks([])
                                 setShowBulkTaskModal(true)
-                              }}
+                        }}
                               className="bg-blue-600 hover:bg-blue-700 text-white border-0 p-2"
-                            >
+                      >
                               <Clipboard className="h-4 w-4" />
-                            </Button>
+                          </Button>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                               Insert Tasks
                             </div>
                           </div>
                           <div className="relative group">
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setSelectedSectionId(section.id)
-                                setShowAddImageModal(true)
-                              }}
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSectionId(section.id)
+                              setShowAddImageModal(true)
+                            }}
                               className="bg-purple-600 hover:bg-purple-700 text-white border-0 p-2"
-                            >
+                          >
                               <ImageIcon className="h-4 w-4" />
-                            </Button>
+                          </Button>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                               Add Image
                             </div>
                           </div>
                           <div className="relative group">
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setSelectedSectionId(section.id)
-                                setShowInsertDocIdModal(true)
-                              }}
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSectionId(section.id)
+                              setShowInsertDocIdModal(true)
+                            }}
                               className="bg-orange-600 hover:bg-orange-700 text-white border-0 p-2"
-                            >
+                          >
                               <FileText className="h-4 w-4" />
-                            </Button>
+                          </Button>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                               Add Doc ID to Title
                             </div>
                           </div>
                           <div className="relative group">
-                            <Button
-                              size="sm"
-                              onClick={() => openEditSectionModal({id: section.id, title: section.title})}
+                          <Button
+                            size="sm"
+                            onClick={() => openEditSectionModal({id: section.id, title: section.title})}
                               className="bg-yellow-600 hover:bg-yellow-700 text-white border-0 p-2"
-                            >
+                          >
                               <Edit className="h-4 w-4" />
-                            </Button>
+                          </Button>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                               Edit
                             </div>
                           </div>
                           <div className="relative group">
-                            <Button
-                              size="sm"
-                              onClick={() => handleDeleteSection(section.id)}
+                          <Button
+                            size="sm"
+                            onClick={() => handleDeleteSection(section.id)}
                               className="bg-red-600 hover:bg-red-700 text-white border-0 p-2"
-                            >
+                          >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                          </Button>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                               Delete
                             </div>
@@ -1048,16 +1124,39 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                     </div>
                   </CardContent>
               </Card>
-                        </motion.div>
+                      </motion.div>
                   )
                 })}
-            </div>
+                </div>
           </div>
+
+          {/* Floating Action Buttons - Between Editor and Preview */}
+          {showSplitScreen && (
+            <div className="flex flex-col justify-center items-center space-y-3 px-1 w-16">
+              {/* Scroll to Top Button */}
+              <Button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="bg-gray-600 hover:bg-gray-700 text-white shadow-lg shadow-gray-500/25 rounded-full p-3 h-12 w-12 flex items-center justify-center"
+                title="Scroll to Top"
+              >
+                <ArrowUp className="h-5 w-5" />
+              </Button>
+              
+              {/* Add Section Button */}
+              <Button
+                onClick={() => setShowAddSectionModal(true)}
+                className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/25 rounded-full p-4 h-14 w-14 flex items-center justify-center"
+                title="Add New Section"
+              >
+                <Plus className="h-6 w-6" />
+              </Button>
+            </div>
+          )}
 
           {/* Print Preview Section */}
           {showSplitScreen && (
-            <div className="w-2/5">
-              <div className="glassmorphism-card p-4">
+            <div className="w-1/2 overflow-y-auto">
+              <div className="glassmorphism-card p-4 h-full">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white">Print Preview</h3>
                   <div className="flex space-x-2">
@@ -1088,7 +1187,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                     </Button>
                   </div>
                 </div>
-                <div className="bg-white rounded-lg p-6 shadow-lg max-h-[80vh] overflow-y-auto">
+                <div className="bg-white rounded-lg p-6 shadow-lg h-full overflow-y-auto live-preview-container">
                   <div className="text-black">
                     {/* MPI Header */}
                     <div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
@@ -1096,7 +1195,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                     </div>
 
                     {/* Assembly Details Section */}
-                    <div className="mb-8 border-2 border-gray-300 rounded-lg p-6">
+                    <div className="mb-8 border-2 border-gray-300 rounded-lg p-6 live-preview-section">
                       <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Assembly Details</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
                         <div>
@@ -1145,9 +1244,9 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                     </div>
 
                     {/* Sections */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       {mpi.sections.map((section, index) => (
-                        <div key={section.id} className="border-2 border-gray-300 rounded-lg p-6">
+                        <div key={section.id} className={`border-2 border-gray-300 rounded-lg p-4 live-preview-section ${index === 0 ? 'live-preview-no-break' : ''}`}>
                           <h3 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2 flex justify-between items-center">
                             <span>{section.title}</span>
                             {section.documentId && (
@@ -1414,8 +1513,8 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                   <h2 className="text-xl font-semibold text-white">Bulk Insert Tasks</h2>
                   <p className="text-white/70 text-sm mt-1">Select multiple tasks to insert at once • Drag to move</p>
                 </div>
-                <Button
-                  variant="ghost"
+              <Button
+                variant="ghost"
                   size="sm"
                   onClick={() => {
                     setShowBulkTaskModal(false)
@@ -1425,8 +1524,8 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                   className="text-white hover:bg-white/10 flex-shrink-0"
                 >
                   <X className="h-4 w-4" />
-                </Button>
-              </div>
+              </Button>
+            </div>
 
               <div className="mb-4">
                 <Input
@@ -1439,13 +1538,13 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
 
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-4">
-                  <Button
-                    size="sm"
+                <Button
+                        size="sm"
                     onClick={handleSelectAllTasks}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
+                      >
                     {selectedTasks.length === filteredTasks.length ? 'Deselect All' : 'Select All'}
-                  </Button>
+                </Button>
                   <span className="text-white/70 text-sm">
                     {selectedTasks.length} of {filteredTasks.length} tasks selected
                   </span>
@@ -1484,10 +1583,10 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                       <Badge className="bg-purple-500 text-white flex-shrink-0 text-xs px-2 py-0.5">{task.categoryName}</Badge>
                       <span className="text-white/60 text-xs flex-shrink-0">Used {task.usageCount}</span>
                       <p className="text-white/70 text-sm flex-1 truncate">{task.step}</p>
-                    </div>
-                  </div>
-                ))}
               </div>
+            </div>
+                ))}
+          </div>
             </motion.div>
         </div>
       )}
@@ -1622,26 +1721,30 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                     )}
                       </div>
 
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-8 right-8 z-50 flex flex-col space-y-3">
-        {/* Scroll to Top Button */}
-        <Button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="bg-gray-600 hover:bg-gray-700 text-white shadow-lg shadow-gray-500/25 rounded-full p-3 h-12 w-12 flex items-center justify-center"
-          title="Scroll to Top"
-        >
-          <ArrowUp className="h-5 w-5" />
-        </Button>
-        
-        {/* Add Section Button */}
-        <Button
-          onClick={() => setShowAddSectionModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/25 rounded-full p-4 h-14 w-14 flex items-center justify-center"
-          title="Add New Section"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
-      </div>
+        {/* Floating Action Buttons - For Single Editor View */}
+        {!showSplitScreen && (
+          <div className="fixed bottom-8 right-8 z-50 flex flex-col space-y-3">
+            {/* Scroll to Top Button */}
+            <Button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="bg-gray-600 hover:bg-gray-700 text-white shadow-lg shadow-gray-500/25 rounded-full p-3 h-12 w-12 flex items-center justify-center"
+              title="Scroll to Top"
+            >
+              <ArrowUp className="h-5 w-5" />
+            </Button>
+            
+            {/* Add Section Button */}
+            <Button
+              onClick={() => setShowAddSectionModal(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/25 rounded-full p-4 h-14 w-14 flex items-center justify-center"
+              title="Add New Section"
+            >
+              <Plus className="h-6 w-6" />
+            </Button>
+          </div>
+        )}
+
     </div>
+    </>
   )
 }

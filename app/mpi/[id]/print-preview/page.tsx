@@ -18,21 +18,22 @@ interface MPISection {
   content: string
   order: number
   isCollapsed: boolean
-  images: string[]
   documentId?: string
+  images: string[]
+}
+
+interface CustomerCompany {
+  _id: string
+  companyName: string
 }
 
 interface MPI {
   _id: string
+  formId?: string
   jobNumber: string
   oldJobNumber?: string
   mpiNumber: string
   mpiVersion: string
-  customerCompanyId: {
-    companyName: string
-    city: string
-    state: string
-  }
   customerAssemblyName: string
   assemblyRev: string
   drawingName: string
@@ -40,30 +41,22 @@ interface MPI {
   assemblyQuantity: number
   kitReceivedDate: string
   dateReleased: string
-  pages: string
-  formId?: string
-  formRev?: string
+  pages: number
+  customerCompanyId: CustomerCompany
   sections: MPISection[]
-  status: string
-  createdAt: string
-  updatedAt: string
 }
 
-export default function PrintPreviewPage({ params }: { params: { id: string } }) {
+interface PrintPreviewPageProps {
+  params: {
+    id: string
+  }
+}
+
+export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
   const [mpi, setMpi] = useState<MPI | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [lastUpdated, setLastUpdated] = useState(new Date())
   const router = useRouter()
-
-  useEffect(() => {
-    fetchMPI()
-    // Auto-refresh every 5 seconds to show real-time changes
-    const interval = setInterval(() => {
-      fetchMPI()
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [params.id])
 
   const fetchMPI = async () => {
     try {
@@ -76,79 +69,76 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
 
       if (response.ok) {
         const data = await response.json()
-        const mpiData = data.mpi
-        
-        // Fetch Docs record to get formId and formRev
-        try {
-          const docsResponse = await fetch(`/api/docs?mpiNo=${mpiData.mpiNumber}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-          
-          if (docsResponse.ok) {
-            const docsData = await docsResponse.json()
-            if (docsData.docs && docsData.docs.length > 0) {
-              const doc = docsData.docs[0]
-              mpiData.formId = doc.formId
-              mpiData.formRev = doc.formRev
-            }
-          }
-        } catch (docsError) {
-          console.error('Error fetching Docs:', docsError)
-          // Continue without form data
-        }
-        
-        setMpi(mpiData)
+        setMpi(data.mpi)
         setLastUpdated(new Date())
       } else {
-        toast.error('Failed to fetch MPI')
-        router.push('/dashboard')
+        console.error('Failed to fetch MPI')
+        toast.error('Failed to load MPI data')
       }
     } catch (error) {
       console.error('Error fetching MPI:', error)
-      toast.error('Error loading MPI')
+      toast.error('An error occurred while loading MPI')
     } finally {
       setIsLoading(false)
     }
   }
 
-
-  const handlePrint = () => {
-    window.print()
-  }
-
   const handleRefresh = () => {
     fetchMPI()
-    toast.success('Print preview refreshed!')
   }
+
+  const handlePrint = () => {
+    // Set document title to something neutral before printing
+    const originalTitle = document.title
+    document.title = 'Manufacturing Process Instructions'
+    window.print()
+    // Restore original title after printing
+    setTimeout(() => {
+      document.title = originalTitle
+    }, 1000)
+  }
+
+  useEffect(() => {
+    fetchMPI()
+    // Set a neutral document title
+    document.title = 'Manufacturing Process Instructions'
+  }, [params.id])
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600 text-xl">Loading print preview...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
       </div>
     )
   }
 
   if (!mpi) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600 text-xl">MPI not found</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">MPI not found</div>
       </div>
     )
   }
 
   return (
     <>
-      {/* Print-specific CSS for page numbering and Form ID */}
+      {/* Print-specific CSS for page numbering, Form ID, and date/time */}
       <style jsx global>{`
         @media print {
           @page {
             margin: 0.5in;
             size: 8.5in 11in;
+            @top-left { content: ""; }
+            @top-center { content: ""; }
+            @top-right { content: ""; }
             @bottom-left {
               content: "Form ID: " attr(data-form-id);
+              font-size: 10pt;
+              color: #666;
+              font-family: Arial, sans-serif;
+            }
+            @bottom-center {
+              content: attr(data-print-date);
               font-size: 10pt;
               color: #666;
               font-family: Arial, sans-serif;
@@ -163,17 +153,47 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
           body {
             counter-reset: page;
             font-family: Arial, sans-serif;
+            margin: 0 !important;
+            padding: 0 !important;
           }
-          .print-page {
-            page-break-after: always;
+          .print-section {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+            page-break-inside: avoid;
           }
-          .print-page:last-child {
-            page-break-after: avoid;
+          .print-section:last-child {
+            margin-bottom: 0;
+          }
+          /* Hide all browser UI elements */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          /* Hide navigation and browser chrome */
+          nav, header, .navbar, .nav-bar, .navigation, .header, .top-bar, .browser-chrome {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          /* Hide any elements with common navigation classes */
+          [class*="nav"], [class*="header"], [class*="navbar"], [class*="topbar"] {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          /* Ensure only our content is visible */
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            background: white !important;
+          }
+          @page {
+            margin: 0.5in !important;
+            border: none !important;
           }
         }
       `}</style>
       
-      <div className="min-h-screen" data-form-id={mpi.formId || 'N/A'}>
+      <div className="min-h-screen" data-form-id={mpi.formId.formId || mpi._id || 'N/A'} data-print-date={new Date().toLocaleDateString() + ', ' + new Date().toLocaleTimeString()}>
       {/* Print Preview Header - Hidden when printing */}
       <div className="bg-white shadow-sm border-b print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -221,7 +241,7 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
           </div>
 
           {/* Customer Information */}
-          <div className="mb-8 border-2 border-gray-300 rounded-lg p-6 print:mb-6 print:rounded-none print-page">
+          <div className="mb-8 border-2 border-gray-300 rounded-lg p-6 print:mb-6 print:rounded-none print-section">
             <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Assembly Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
               <div>
@@ -240,30 +260,26 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
                 <span className="font-semibold">Customer:</span> {mpi.customerCompanyId.companyName}
               </div>
               <div>
-                <span className="font-semibold">Assembly Quantity:</span> {mpi.assemblyQuantity || 'N/A'}
+                <span className="font-semibold">Assembly Quantity:</span> {mpi.assemblyQuantity}
               </div>
               <div>
                 <span className="font-semibold">Customer Assembly Name:</span> {mpi.customerAssemblyName}
               </div>
               <div>
-                <span className="font-semibold">Customer Assembly Rev:</span> {mpi.assemblyRev || 'N/A'}
-              </div>  
-              <div>
-                <span className="font-semibold">Drawing Name:</span> {mpi.drawingName || 'N/A'}
+                <span className="font-semibold">Customer Assembly Rev:</span> {mpi.assemblyRev}
               </div>
               <div>
-                <span className="font-semibold">Drawing Rev:</span> {mpi.drawingRev || 'N/A'}
+                <span className="font-semibold">Drawing Name:</span> {mpi.drawingName}
               </div>
               <div>
-                <span className="font-semibold">Kit receive date:</span> {new Date(mpi.kitReceivedDate).toLocaleDateString() || 'N/A'}
-              </div>              
-              <div>
-                <span className="font-semibold">Date Released:</span> {new Date(mpi.dateReleased).toLocaleDateString() || 'N/A'}
+                <span className="font-semibold">Drawing Rev:</span> {mpi.drawingRev}
               </div>
               <div>
-                <span className="font-semibold">Pages:</span> {mpi.pages || 'N/A'}
-              </div>        
-            
+                <span className="font-semibold">Kit receive date:</span> {new Date(mpi.kitReceivedDate).toLocaleDateString()}
+              </div>
+              <div>
+                <span className="font-semibold">Kit release date:</span> {new Date(mpi.dateReleased).toLocaleDateString()}
+              </div>
             </div>
           </div>
 
@@ -272,7 +288,7 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
             {mpi.sections.map((section, index) => {
               console.log('🖨️ Print Preview - Section:', section.title, 'Document ID:', section.documentId)
               return (
-              <div key={section.id} className="border-2 border-gray-300 rounded-lg p-6 break-inside-avoid print:rounded-none print:mb-4 print-page">
+                        <div key={section.id} className="border-2 border-gray-300 rounded-lg p-6 break-inside-avoid print:rounded-none print:mb-4 print-section">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2 flex justify-between items-center">
                   <span>{section.title}</span>
                   {section.documentId && (
@@ -281,33 +297,34 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
                     </span>
                   )}
                 </h3>
-                
                 {section.content && (
-                  <div className="text-gray-900">
-                    <div 
-                      className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 print:bg-white print:border-gray-300"
-                      dangerouslySetInnerHTML={{ __html: section.content }}
-                    />
-                  </div>
+                  <div 
+                    className="text-gray-900 prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: section.content }}
+                  />
                 )}
-
-                {section.images.length > 0 && (
+                {section.images && section.images.length > 0 && (
                   <div className="mt-4">
                     <h4 className="font-semibold text-gray-900 mb-2">Images:</h4>
-                    <div className="flex space-x-2">
-                      {section.images.map((image, imgIndex) => (
-                        <div key={imgIndex} className="w-20 h-20 bg-gray-200 border-2 border-gray-300 rounded-lg flex items-center justify-center print:border-gray-400">
-                          <ImageIcon className="h-8 w-8 text-gray-600" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {section.images.map((image, imageIndex) => (
+                        <div key={imageIndex} className="border rounded-lg p-2">
+                          <img 
+                            src={image} 
+                            alt={`Section ${index + 1} Image ${imageIndex + 1}`}
+                            className="w-full h-auto rounded"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {!section.content && section.images.length === 0 && (
-                  <div className="text-gray-500 italic">
-                    No content added to this section yet.
-                  </div>
+                {(!section.content || section.content.trim() === '') && (!section.images || section.images.length === 0) && (
+                  <p className="text-gray-500 italic">No content added to this section yet.</p>
                 )}
               </div>
               )
