@@ -121,6 +121,8 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     category: ''
   })
   const [newImageUrl, setNewImageUrl] = useState('')
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   
   // Section management states
   const [showAddSectionModal, setShowAddSectionModal] = useState(false)
@@ -130,32 +132,142 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
   
   const router = useRouter()
 
+  // Token validation function
+  const validateToken = (token: string | null): boolean => {
+    if (!token) {
+      console.error('❌ No token found')
+      return false
+    }
+    
+    if (!token.includes('.')) {
+      console.error('❌ Invalid token format - missing dots')
+      localStorage.removeItem('token')
+      return false
+    }
+    
+    try {
+      // Basic JWT structure validation (3 parts separated by dots)
+      const parts = token.split('.')
+      if (parts.length !== 3) {
+        console.error('❌ Invalid token format - wrong number of parts')
+        localStorage.removeItem('token')
+        return false
+      }
+      
+      console.log('✅ Token format is valid')
+      return true
+    } catch (error) {
+      console.error('❌ Token validation error:', error)
+      localStorage.removeItem('token')
+      return false
+    }
+  }
+
   useEffect(() => {
-    fetchMPI()
-    fetchProcessItems()
-    fetchTasks()
-    fetchDocumentIds()
+    console.log('🎯 Edit page useEffect triggered with params.id:', params.id)
+    
+    // Add a small delay to ensure localStorage is available
+    const initializePage = async () => {
+      // Wait a bit to ensure localStorage is ready
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const token = localStorage.getItem('token')
+      console.log('🔑 Edit page - Token check:', token ? 'Token exists' : 'No token found')
+      console.log('🔑 Edit page - Token value:', token ? token.substring(0, 20) + '...' : 'null')
+      
+      if (validateToken(token)) {
+        console.log('🚀 Starting data fetch...')
+        try {
+          await fetchMPI()
+          await Promise.all([
+            fetchProcessItems(),
+            fetchTasks(),
+            fetchDocumentIds()
+          ])
+        } catch (error) {
+          console.error('❌ Error during data fetch:', error)
+        }
+      } else {
+        console.error('❌ Invalid token - redirecting to login')
+        toast.error('Please log in to access this page')
+        router.push('/login')
+      }
+    }
+    
+    initializePage()
   }, [params.id])
 
   const fetchMPI = async () => {
     try {
       const token = localStorage.getItem('token')
+      console.log('🔑 Fetching MPI with token:', token ? 'Token exists' : 'No token found')
+      console.log('🔍 MPI ID to fetch:', params.id)
+      
+      if (!token) {
+        console.error('❌ No authentication token found')
+        toast.error('Please log in to access this MPI')
+        router.push('/login')
+        return
+      }
+
+      // Validate token format
+      if (!token.includes('.')) {
+        console.error('❌ Invalid token format - missing dots')
+        localStorage.removeItem('token')
+        toast.error('Invalid session. Please log in again.')
+        router.push('/login')
+        return
+      }
+
+      // Validate MPI ID format (should be 24 character hex string)
+      if (!params.id || params.id.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(params.id)) {
+        console.error('❌ Invalid MPI ID format:', params.id)
+        toast.error('Invalid MPI ID format')
+        router.push('/dashboard')
+        return
+      }
+
+      console.log('📡 Making API request to:', `/api/mpi/${params.id}`)
       const response = await fetch(`/api/mpi/${params.id}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       })
 
+      console.log('📡 API response status:', response.status)
+      console.log('📡 API response headers:', Object.fromEntries(response.headers.entries()))
+
       if (response.ok) {
         const result = await response.json()
+        console.log('✅ MPI fetched successfully:', result.mpi?.mpiNumber)
         setMpi(result.mpi)
       } else {
-        toast.error('Failed to fetch MPI')
-        router.push('/dashboard')
+        const errorData = await response.json()
+        console.error('❌ API error response:', errorData)
+        
+        if (response.status === 401) {
+          console.error('❌ Authentication failed - token invalid or expired')
+          localStorage.removeItem('token')
+          toast.error('Session expired. Please log in again.')
+          router.push('/login')
+        } else if (response.status === 403) {
+          console.error('❌ Access denied - MPI belongs to different engineer')
+          toast.error('You do not have access to this MPI. It may belong to a different engineer.')
+          router.push('/dashboard')
+        } else if (response.status === 404) {
+          console.error('❌ MPI not found')
+          toast.error('MPI not found. It may have been deleted or the link is invalid.')
+          router.push('/dashboard')
+        } else {
+          console.error('❌ Server error:', errorData.error)
+          toast.error(`Failed to fetch MPI: ${errorData.error || 'Unknown error'}`)
+          router.push('/dashboard')
+        }
       }
     } catch (error) {
-      console.error('Error fetching MPI:', error)
-      toast.error('An error occurred while fetching MPI')
+      console.error('❌ Network or other error fetching MPI:', error)
+      toast.error('Network error. Please check your connection and try again.')
       router.push('/dashboard')
     } finally {
       setIsLoading(false)
@@ -477,27 +589,90 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     toast.success(`Document ID "${docId.docId}" added to ${sectionTitle}!`)
   }
 
-  const handleAddImage = (sectionId: string) => {
-    if (!mpi || !newImageUrl.trim()) return
-
-    const updatedSections = mpi.sections.map(section => {
-      if (section.id === sectionId) {
-        return {
-          ...section,
-          images: [...section.images, newImageUrl.trim()]
-        }
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPEG, PNG, GIF, or WebP)')
+        return
       }
-      return section
-    })
+      
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (file.size > maxSize) {
+        toast.error('Image file size must be less than 5MB')
+        return
+      }
+      
+      setSelectedImageFile(file)
+      
+      // Create preview
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
-    setMpi({
-      ...mpi,
-      sections: updatedSections
-    })
+  const handleAddImage = (sectionId: string) => {
+    if (!mpi) return
+    
+    let imageToAdd = ''
+    
+    if (selectedImageFile) {
+      // Convert file to base64 for storage
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const base64String = e.target?.result as string
+        const updatedSections = mpi.sections.map(section => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              images: [...section.images, base64String]
+            }
+          }
+          return section
+        })
 
-    setNewImageUrl('')
-    setShowAddImageModal(false)
-    toast.success('Image added successfully!')
+        setMpi({
+          ...mpi,
+          sections: updatedSections
+        })
+
+        // Reset states
+        setSelectedImageFile(null)
+        setImagePreview(null)
+        setNewImageUrl('')
+        setShowAddImageModal(false)
+        toast.success('Image uploaded successfully!')
+      }
+      reader.readAsDataURL(selectedImageFile)
+    } else if (newImageUrl.trim()) {
+      // Fallback to URL if no file selected
+      const updatedSections = mpi.sections.map(section => {
+        if (section.id === sectionId) {
+          return {
+            ...section,
+            images: [...section.images, newImageUrl.trim()]
+          }
+        }
+        return section
+      })
+
+      setMpi({
+        ...mpi,
+        sections: updatedSections
+      })
+
+      setNewImageUrl('')
+      setShowAddImageModal(false)
+      toast.success('Image added successfully!')
+    } else {
+      toast.error('Please select an image file or enter an image URL')
+    }
   }
 
   const handleRemoveImage = (sectionId: string, imageIndex: number) => {
@@ -520,6 +695,13 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     })
 
     toast.success('Image removed successfully!')
+  }
+
+  const clearImageModal = () => {
+    setSelectedImageFile(null)
+    setImagePreview(null)
+    setNewImageUrl('')
+    setShowAddImageModal(false)
   }
 
 
@@ -741,6 +923,84 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading MPI editor...</div>
+        {/* Debug Panel */}
+        <div className="fixed top-4 right-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 max-w-md">
+          <h3 className="text-yellow-400 font-bold mb-2">Debug Info</h3>
+          <div className="text-yellow-200 text-sm space-y-1">
+            <p><strong>MPI ID:</strong> {params.id}</p>
+            <p><strong>Token:</strong> {localStorage.getItem('token') ? 'Exists' : 'Missing'}</p>
+            <p><strong>Loading:</strong> {isLoading ? 'Yes' : 'No'}</p>
+            <p><strong>MPI Data:</strong> {mpi ? 'Loaded' : 'Not loaded'}</p>
+            <div className="mt-2 space-y-1">
+              <button 
+                onClick={async () => {
+                  console.log('🧪 Manual API test starting...')
+                  const token = localStorage.getItem('token')
+                  console.log('🧪 Token:', token ? token.substring(0, 20) + '...' : 'null')
+                  
+                  try {
+                    const response = await fetch(`/api/mpi/${params.id}`, {
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      }
+                    })
+                    console.log('🧪 Response status:', response.status)
+                    console.log('🧪 Response headers:', Object.fromEntries(response.headers.entries()))
+                    
+                    const data = await response.text()
+                    console.log('🧪 Response body:', data)
+                    
+                    try {
+                      const jsonData = JSON.parse(data)
+                      console.log('🧪 Parsed JSON:', jsonData)
+                    } catch (e) {
+                      console.log('🧪 Response is not JSON:', data)
+                    }
+                  } catch (error) {
+                    console.error('🧪 API test error:', error)
+                  }
+                }}
+                className="px-2 py-1 bg-blue-600 text-white rounded text-xs"
+              >
+                Test API Call
+              </button>
+              <button 
+                onClick={() => {
+                  console.log('🔄 Manual retry - fetching MPI again')
+                  fetchMPI()
+                }}
+                className="px-2 py-1 bg-green-600 text-white rounded text-xs ml-1"
+              >
+                Retry Fetch
+              </button>
+              <button 
+                onClick={async () => {
+                  console.log('🧪 Testing dashboard API...')
+                  const token = localStorage.getItem('token')
+                  
+                  try {
+                    const response = await fetch('/api/mpi', {
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      }
+                    })
+                    console.log('🧪 Dashboard API status:', response.status)
+                    const data = await response.json()
+                    console.log('🧪 Dashboard API response:', data)
+                    console.log('🧪 Found MPIs:', data.mpis?.length || 0)
+                  } catch (error) {
+                    console.error('🧪 Dashboard API error:', error)
+                  }
+                }}
+                className="px-2 py-1 bg-purple-600 text-white rounded text-xs ml-1"
+              >
+                Test Dashboard API
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -749,6 +1009,84 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
         <div className="text-white text-xl">MPI not found</div>
+        {/* Debug Panel */}
+        <div className="fixed top-4 right-4 bg-red-500/20 border border-red-500/30 rounded-lg p-4 max-w-md">
+          <h3 className="text-red-400 font-bold mb-2">Debug Info - MPI Not Found</h3>
+          <div className="text-red-200 text-sm space-y-1">
+            <p><strong>MPI ID:</strong> {params.id}</p>
+            <p><strong>Token:</strong> {localStorage.getItem('token') ? 'Exists' : 'Missing'}</p>
+            <p><strong>Loading:</strong> {isLoading ? 'Yes' : 'No'}</p>
+            <p><strong>MPI Data:</strong> {mpi ? 'Loaded' : 'Not loaded'}</p>
+            <div className="mt-2 space-y-1">
+              <button 
+                onClick={async () => {
+                  console.log('🧪 Manual API test starting...')
+                  const token = localStorage.getItem('token')
+                  console.log('🧪 Token:', token ? token.substring(0, 20) + '...' : 'null')
+                  
+                  try {
+                    const response = await fetch(`/api/mpi/${params.id}`, {
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      }
+                    })
+                    console.log('🧪 Response status:', response.status)
+                    console.log('🧪 Response headers:', Object.fromEntries(response.headers.entries()))
+                    
+                    const data = await response.text()
+                    console.log('🧪 Response body:', data)
+                    
+                    try {
+                      const jsonData = JSON.parse(data)
+                      console.log('🧪 Parsed JSON:', jsonData)
+                    } catch (e) {
+                      console.log('🧪 Response is not JSON:', data)
+                    }
+                  } catch (error) {
+                    console.error('🧪 API test error:', error)
+                  }
+                }}
+                className="px-2 py-1 bg-blue-600 text-white rounded text-xs"
+              >
+                Test API Call
+              </button>
+              <button 
+                onClick={() => {
+                  console.log('🔄 Manual retry - fetching MPI again')
+                  fetchMPI()
+                }}
+                className="px-2 py-1 bg-green-600 text-white rounded text-xs ml-1"
+              >
+                Retry Fetch
+              </button>
+              <button 
+                onClick={async () => {
+                  console.log('🧪 Testing dashboard API...')
+                  const token = localStorage.getItem('token')
+                  
+                  try {
+                    const response = await fetch('/api/mpi', {
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      }
+                    })
+                    console.log('🧪 Dashboard API status:', response.status)
+                    const data = await response.json()
+                    console.log('🧪 Dashboard API response:', data)
+                    console.log('🧪 Found MPIs:', data.mpis?.length || 0)
+                  } catch (error) {
+                    console.error('🧪 Dashboard API error:', error)
+                  }
+                }}
+                className="px-2 py-1 bg-purple-600 text-white rounded text-xs ml-1"
+              >
+                Test Dashboard API
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -917,7 +1255,27 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                         )}
                       </div>
                       </div>
+                      
                         <div className="flex items-center space-x-2">
+                          {/* Add Doc ID to Title Button */}
+                        <div className="relative group">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSectionId(section.id)
+                              setShowInsertDocIdModal(true)
+                            }}
+                              className="bg-orange-600 hover:bg-orange-700 text-white border-0 p-2"
+                          >
+                              <FileText className="h-4 w-4" />
+                          </Button>
+
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                              Add Doc ID to Title
+                            </div>
+                          </div>
+
+                          {/* Add Tasks Button */}
                           <div className="relative group">
                           <Button
                             size="sm"
@@ -934,6 +1292,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                               Insert Tasks
                             </div>
                           </div>
+                          {/* Add Image Button */}
                           <div className="relative group">
                           <Button
                             size="sm"
@@ -949,21 +1308,9 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                               Add Image
                             </div>
                           </div>
-                          <div className="relative group">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setSelectedSectionId(section.id)
-                              setShowInsertDocIdModal(true)
-                            }}
-                              className="bg-orange-600 hover:bg-orange-700 text-white border-0 p-2"
-                          >
-                              <FileText className="h-4 w-4" />
-                          </Button>
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                              Add Doc ID to Title
-                            </div>
-                          </div>
+                          {/* Add Doc ID to Title Button */}
+                          
+
                           <div className="relative group">
                           <Button
                             size="sm"
@@ -1075,27 +1422,55 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                             {section.images.map((imageUrl, imageIndex) => (
                               <div key={imageIndex} className="relative group">
                                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                  {/* Image Preview */}
+                                  <div className="mb-3">
+                                    <img
+                                      src={imageUrl}
+                                      alt={`Section image ${imageIndex + 1}`}
+                                      className="w-full h-32 object-cover rounded border border-white/20"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const parent = target.parentElement;
+                                        if (parent) {
+                                          parent.innerHTML = `
+                                            <div class="w-full h-32 bg-white/10 border border-white/20 rounded flex items-center justify-center">
+                                              <div class="text-white/50 text-center">
+                                                <div class="text-sm">Image failed to load</div>
+                                                <div class="text-xs mt-1">${imageUrl.length > 30 ? imageUrl.substring(0, 30) + '...' : imageUrl}</div>
+                                              </div>
+                                            </div>
+                                          `;
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  
+                                  {/* Image Info */}
                                   <div className="flex items-center space-x-2 mb-2">
                                     <LinkIcon className="h-4 w-4 text-blue-400" />
-                                    <span className="text-white/70 text-sm truncate">{imageUrl}</span>
+                                    <span className="text-white/70 text-sm truncate">
+                                      {imageUrl.length > 40 ? imageUrl.substring(0, 40) + '...' : imageUrl}
+                                    </span>
                                   </div>
-                              <Button
-                                size="sm"
+                                  
+                                  <Button
+                                    size="sm"
                                     onClick={() => window.open(imageUrl, '_blank')}
                                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                              >
-                                    View Image
-                              </Button>
+                                  >
+                                    View Full Size
+                                  </Button>
                                 </div>
-                              <Button
-                                size="sm"
+                                <Button
+                                  size="sm"
                                   variant="destructive"
                                   onClick={() => handleRemoveImage(section.id, imageIndex)}
                                   className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
+                                >
                                   <X className="h-3 w-3" />
-                              </Button>
-                        </div>
+                                </Button>
+                              </div>
                             ))}
                         </div>
                       </div>
@@ -1245,6 +1620,39 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                           {!section.content && (
                             <div className="text-gray-500 italic">
                               No content added to this section yet.
+                            </div>
+                          )}
+                          
+                          {/* Images Section */}
+                          {section.images && section.images.length > 0 && (
+                            <div className="mt-4">
+                              <h4 className="text-lg font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-1">
+                                Images ({section.images.length})
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {section.images.map((imageUrl, imageIndex) => (
+                                  <div key={imageIndex} className="border border-gray-300 rounded-lg p-3 bg-gray-50">
+                                    <img
+                                      src={imageUrl}
+                                      alt={`Section image ${imageIndex + 1}`}
+                                      className="w-full h-auto max-h-64 object-contain rounded"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const parent = target.parentElement;
+                                        if (parent) {
+                                          parent.innerHTML = `
+                                            <div class="text-gray-500 text-center py-4">
+                                              <div class="text-sm">Image failed to load</div>
+                                              <div class="text-xs mt-1">${imageUrl.length > 50 ? imageUrl.substring(0, 50) + '...' : imageUrl}</div>
+                                            </div>
+                                          `;
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1650,14 +2058,14 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glassmorphism-card rounded-lg p-6 w-full max-w-md"
+              className="glassmorphism-card rounded-lg p-6 w-full max-w-lg"
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-white">Add Image Link</h2>
+                <h2 className="text-xl font-semibold text-white">Upload Image</h2>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowAddImageModal(false)}
+                  onClick={clearImageModal}
                   className="text-white hover:bg-white/10"
                 >
                   <X className="h-4 w-4" />
@@ -1665,39 +2073,105 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
               </div>
 
               <div className="space-y-4">
+                {/* Image Format & Size Notes */}
+                <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+                  <h3 className="text-blue-300 font-semibold mb-2">📋 Upload Guidelines</h3>
+                  <div className="text-blue-200 text-sm space-y-1">
+                    <p><strong>Supported Formats:</strong> JPEG, JPG, PNG, GIF, WebP</p>
+                    <p><strong>Maximum Size:</strong> 5MB per image</p>
+                    <p><strong>Recommended:</strong> 1920x1080 or smaller for best performance</p>
+                    <p><strong>Quality:</strong> High resolution images will be automatically optimized</p>
+                  </div>
+                </div>
+
+                {/* File Upload Section */}
                 <div>
-                  <Label htmlFor="imageUrl" className="text-white">Image URL *</Label>
+                  <Label htmlFor="imageFile" className="text-white font-medium">Upload Image File *</Label>
+                  <div className="mt-2">
+                    <input
+                      id="imageFile"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="imageFile"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/30 rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <ImageIcon className="w-8 h-8 mb-2 text-white/60" />
+                        <p className="mb-2 text-sm text-white/80">
+                          <span className="font-semibold">Click to upload</span> or drag and drop
+                        </p>
+                        <p className="text-xs text-white/60">JPEG, PNG, GIF, WebP (MAX. 5MB)</p>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  {/* File Info Display */}
+                  {selectedImageFile && (
+                    <div className="mt-2 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <ImageIcon className="h-4 w-4 text-green-300" />
+                        <span className="text-green-200 text-sm font-medium">{selectedImageFile.name}</span>
+                        <span className="text-green-300 text-xs">
+                          ({(selectedImageFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div>
+                    <Label className="text-white font-medium">Preview</Label>
+                    <div className="mt-2 border border-white/20 rounded-lg p-2 bg-white/5">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="max-w-full h-auto max-h-48 rounded"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Alternative URL Input */}
+                <div className="border-t border-white/20 pt-4">
+                  <Label htmlFor="imageUrl" className="text-white font-medium">Or Enter Image URL</Label>
                   <Input
                     id="imageUrl"
                     value={newImageUrl}
                     onChange={(e) => setNewImageUrl(e.target.value)}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60 mt-2"
                     placeholder="https://example.com/image.jpg"
-                    required
                   />
-                        </div>
+                  <p className="text-white/60 text-xs mt-1">Use this if you have an image URL instead of uploading a file</p>
+                </div>
 
                 <div className="flex space-x-3 pt-4">
                   <Button
                     onClick={() => handleAddImage(selectedSectionId)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                    disabled={!selectedImageFile && !newImageUrl.trim()}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ImageIcon className="h-4 w-4 mr-2" />
-                    Add Image
+                    {selectedImageFile ? 'Upload Image' : 'Add Image'}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowAddImageModal(false)}
+                    onClick={clearImageModal}
                     className="flex-1 border-white/20 text-white hover:bg-white/10"
                   >
                     Cancel
                   </Button>
-                            </div>
-                        </div>
+                </div>
+              </div>
             </motion.div>
-                      </div>
-                    )}
+          </div>
+        )}
                       </div>
 
         {/* Floating Action Buttons - For Single Editor View */}

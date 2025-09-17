@@ -7,19 +7,44 @@ import Docs from '@/models/Docs'
 import Customer from '@/models/Customer'
 import CustomerCompany from '@/models/CustomerCompany'
 
+// Ensure models are registered
+const models = {
+  MPI,
+  Engineer,
+  Docs,
+  Customer,
+  CustomerCompany
+}
+
 export async function GET(request: NextRequest) {
   try {
     await dbConnect()
 
     const token = request.headers.get('authorization')?.replace('Bearer ', '')
+    console.log('🔑 Dashboard API - Token received:', token ? 'Token exists' : 'No token')
+    
     if (!token) {
+      console.error('❌ Dashboard API - No token provided')
       return NextResponse.json({ error: 'No token provided' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    const engineerId = decoded.userId
+    // Validate token format
+    if (!token.includes('.')) {
+      console.error('❌ Dashboard API - Invalid token format')
+      return NextResponse.json({ error: 'Invalid token format' }, { status: 401 })
+    }
 
-    console.log('Fetching MPIs for engineer:', engineerId)
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
+      console.log('✅ Dashboard API - Token verified, Engineer ID:', decoded.userId)
+    } catch (jwtError) {
+      console.error('❌ Dashboard API - JWT verification failed:', jwtError)
+      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
+    }
+
+    const engineerId = decoded.userId
+    console.log('🔍 Dashboard API - Fetching MPIs for engineer:', engineerId)
 
     // Fetch MPIs and handle populate gracefully
     const mpis = await MPI.find({ engineerId, isActive: true })

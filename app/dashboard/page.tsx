@@ -280,7 +280,7 @@ export default function DashboardPage() {
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                New MPI/Traveler Combo
+                Create MPI/Traveler Combo
               </Button>
             </Link>
             <Link href="/tasks/new">
@@ -485,16 +485,17 @@ export default function DashboardPage() {
                             </h3>
                             <p className="text-white/70 text-sm">Job: {mpi.jobNumber}</p>
                           </div>
-                          <div className="flex items-center text-white/80">
-                            <Building className="h-4 w-4 mr-2" />
-                            <span className="text-sm">{mpi.customerAssemblyName}</span>
-                            </div>
                           {mpi.customerCompanyId && (
                             <div className="flex items-center text-white/80">
                               <User className="h-4 w-4 mr-2" />
                               <span className="text-sm">{mpi.customerCompanyId.companyName}</span>
                               </div>
                           )}
+                          <div className="flex items-center text-white/80">
+                            <Building className="h-4 w-4 mr-2" />
+                            <span className="text-sm">{mpi.customerAssemblyName}</span>
+                            </div>
+                          
                           {mpi.assemblyQuantity && (
                             <div className="flex items-center text-white/80">
                               <span className="text-sm font-medium">Qty: {mpi.assemblyQuantity}</span>
@@ -502,8 +503,8 @@ export default function DashboardPage() {
                           )}
                           <div className="flex items-center text-white/80">
                             <Calendar className="h-4 w-4 mr-2" />
-                            <span className="text-sm">
-                              {new Date(mpi.updatedAt).toLocaleDateString()}
+                            <span className="text-sm">                           
+                             Updated: {new Date(mpi.updatedAt).toLocaleDateString()}         
                             </span>
                             </div>
                           </div>
@@ -514,23 +515,36 @@ export default function DashboardPage() {
                           </Badge>
                           
                         <div className="flex items-center space-x-2">
-                            <Link 
-                              href={`/mpi/${mpi._id}`}
-                              className="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors inline-flex items-center justify-center"
-                        >
-                          <Eye className="h-4 w-4" />
-                            </Link>
+          
                             <Link 
                               href={`/mpi/${mpi._id}/edit`}
-                              className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors inline-flex items-center justify-center"
+                              className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors inline-flex items-center justify-center relative group"
+                              title="Edit MPI"
                           >
                             <Edit className="h-4 w-4" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-blue-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                              Edit MPI
+                            </div>
+                            </Link>
+                            <Link 
+                              href={`/mpi/${mpi._id}/print-preview`}
+                              className="p-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white transition-colors inline-flex items-center justify-center relative group"
+                              
+                          >
+                            <Printer className="h-4 w-4" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-blue-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                              Print Preview
+                            </div>
                             </Link>
                             <button
                               onClick={() => openDeleteModal(mpi._id, mpi.mpiNumber)}
-                              className="p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                              className="p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors relative group"
+                              
                           >
                             <Trash2 className="h-4 w-4" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-blue-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                              Delete MPI
+                            </div>
                             </button>
                           </div>
                         </div>

@@ -5,6 +5,16 @@ import MPI from '@/models/MPI'
 import Customer from '@/models/Customer'
 import Docs from '@/models/Docs'
 import CustomerCompany from '@/models/CustomerCompany'
+import Form from '@/models/Form'
+
+// Ensure models are registered
+const models = {
+  MPI,
+  Customer,
+  Docs,
+  CustomerCompany,
+  Form
+}
 
 export async function GET(
   request: NextRequest,
@@ -14,30 +24,63 @@ export async function GET(
     await dbConnect()
 
     const token = request.headers.get('authorization')?.replace('Bearer ', '')
+    console.log('🔑 MPI API - Token received:', token ? 'Token exists' : 'No token')
+    
     if (!token) {
+      console.error('❌ MPI API - No token provided')
       return NextResponse.json({ error: 'No token provided' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
+    // Validate token format
+    if (!token.includes('.')) {
+      console.error('❌ MPI API - Invalid token format')
+      return NextResponse.json({ error: 'Invalid token format' }, { status: 401 })
+    }
+
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
+      console.log('✅ MPI API - Token verified, Engineer ID:', decoded.userId)
+    } catch (jwtError) {
+      console.error('❌ MPI API - JWT verification failed:', jwtError)
+      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
+    }
+
     const engineerId = decoded.userId
+    console.log('🔍 MPI API - Searching for MPI:', params.id, 'by engineer:', engineerId)
 
     const mpi = await MPI.findOne({ _id: params.id, engineerId, isActive: true })
       .populate('customerCompanyId')
       .populate('formId', 'formId formRev description')
 
     if (!mpi) {
-      return NextResponse.json(
-        { error: 'MPI not found or access denied' },
-        { status: 404 }
-      )
+      console.error('❌ MPI API - MPI not found or access denied')
+      console.log('🔍 MPI API - Checked for MPI ID:', params.id, 'Engineer ID:', engineerId, 'isActive: true')
+      
+      // Check if MPI exists but belongs to different engineer
+      const mpiExists = await MPI.findOne({ _id: params.id })
+      if (mpiExists) {
+        console.log('🔍 MPI API - MPI exists but belongs to different engineer:', mpiExists.engineerId)
+        return NextResponse.json(
+          { error: 'Access denied - MPI belongs to different engineer' },
+          { status: 403 }
+        )
+      } else {
+        console.log('🔍 MPI API - MPI does not exist in database')
+        return NextResponse.json(
+          { error: 'MPI not found' },
+          { status: 404 }
+        )
+      }
     }
 
+    console.log('✅ MPI API - MPI found:', mpi.mpiNumber)
     return NextResponse.json({ mpi })
 
   } catch (error) {
-    console.error('Error fetching MPI:', error)
+    console.error('❌ MPI API - Error fetching MPI:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

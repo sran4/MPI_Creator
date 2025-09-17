@@ -133,6 +133,7 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
           @page {
             margin: 0.5in;
             size: 8.5in 11in;
+            border: none !important;
             @top-left { content: ""; }
             @top-center { content: ""; }
             @top-right { content: ""; }
@@ -160,19 +161,34 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
             font-family: Arial, sans-serif;
             margin: 0 !important;
             padding: 0 !important;
+            border: none !important;
+            background: white !important;
           }
-          .print-section {
-            break-inside: avoid;
-            margin-bottom: 1rem;
-            page-break-inside: avoid;
+          html {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            background: white !important;
           }
-          .print-section:last-child {
-            margin-bottom: 0;
-          }
-          /* Hide all browser UI elements */
+          /* Remove all borders from print content */
           * {
             -webkit-print-color-adjust: exact !important;
             color-adjust: exact !important;
+            border-color: transparent !important;
+          }
+          /* Allow sections to flow naturally - only avoid breaking inside sections */
+          .print-section {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            margin-bottom: 1rem;
+            /* Remove forced page breaks - let content flow naturally */
+            page-break-before: auto !important;
+          }
+          .print-section:first-child {
+            page-break-before: avoid !important;
+          }
+          .print-section:last-child {
+            margin-bottom: 0;
           }
           /* Hide navigation and browser chrome */
           nav, header, .navbar, .nav-bar, .navigation, .header, .top-bar, .browser-chrome {
@@ -184,16 +200,15 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
             display: none !important;
             visibility: hidden !important;
           }
-          /* Ensure only our content is visible */
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
+          /* Remove borders from all elements */
+          div, section, article, main, .border, .border-2, .border-gray-300 {
+            border: none !important;
+            box-shadow: none !important;
+          }
+          /* Ensure content containers have no borders */
+          .min-h-screen, .space-y-6, .space-y-4 {
             border: none !important;
             background: white !important;
-          }
-          @page {
-            margin: 0.5in !important;
-            border: none !important;
           }
         }
       `}</style>
@@ -241,13 +256,13 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
       <div className="max-w-4xl mx-auto p-6 print:p-0 print:max-w-none">
         <div className="bg-white shadow-lg print:shadow-none print-page">
           {/* MPI Header */}
-          <div className="text-center mb-8 pt-10 border-b-2 border-gray-300 pb-6 print:mb-6">
+          <div className="text-center mb-8 pt-10 border-b-2 border-gray-300 pb-6 print:mb-6 print:border-b print:border-gray-400">
             <h1 className="text-3xl font-bold mb-4 text-gray-900">Manufacturing Process Instructions</h1>
           </div>
 
           {/* Customer Information */}
-          <div className="mb-8 border-2 border-gray-300 rounded-lg p-6 print:mb-6 print:rounded-none print-section">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Assembly Details</h2>
+          <div className="mb-8 border-2 border-gray-300 rounded-lg p-6 print:mb-6 print:border-none print:rounded-none print:p-4 print-section">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2 print:border-b print:border-gray-400">Assembly Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
               <div>
                 <span className="font-semibold">MPI Number:</span> {mpi.mpiNumber}
@@ -293,8 +308,8 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
             {mpi.sections.map((section, index) => {
               console.log('🖨️ Print Preview - Section:', section.title, 'Document ID:', section.documentId)
               return (
-                        <div key={section.id} className="border-2 border-gray-300 rounded-lg p-6 break-inside-avoid print:rounded-none print:mb-4 print-section">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2 flex justify-between items-center">
+                        <div key={section.id} className="border-2 border-gray-300 rounded-lg p-6 break-inside-avoid print:border-none print:rounded-none print:mb-4 print:p-4 print-section">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2 print:border-b print:border-gray-400 flex justify-between items-center">
                   <span>{section.title}</span>
                   {section.documentId && (
                     <span className="px-3 py-1 bg-blue-100 border border-blue-300 rounded-lg text-blue-800 text-sm font-medium">
@@ -313,11 +328,11 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
                     <h4 className="font-semibold text-gray-900 mb-2">Images:</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {section.images.map((image, imageIndex) => (
-                        <div key={imageIndex} className="border rounded-lg p-2">
+                        <div key={imageIndex} className="border rounded-lg p-2 print:border-none print:p-1">
                           <img 
                             src={image} 
                             alt={`Section ${index + 1} Image ${imageIndex + 1}`}
-                            className="w-full h-auto rounded"
+                            className="w-full h-auto rounded print:rounded-none"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
