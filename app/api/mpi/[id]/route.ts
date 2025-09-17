@@ -23,6 +23,7 @@ export async function GET(
 
     const mpi = await MPI.findOne({ _id: params.id, engineerId, isActive: true })
       .populate('customerCompanyId')
+      .populate('formId', 'formId formRev description')
 
     if (!mpi) {
       return NextResponse.json(
@@ -130,6 +131,7 @@ export async function PUT(
 
     const updatedMPI = await MPI.findById(mpi._id)
       .populate('customerCompanyId')
+      .populate('formId', 'formId formRev description')
 
     return NextResponse.json({
       success: true,

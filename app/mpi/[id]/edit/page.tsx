@@ -35,8 +35,16 @@ import { Editor } from '@tinymce/tinymce-react'
 
 interface MPI {
   _id: string
+  jobNumber: string
+  oldJobNumber?: string
   mpiNumber: string
   mpiVersion: string
+  formId?: {
+    _id: string
+    formId: string
+    formRev: string
+    description?: string
+  }
   customerCompanyId: {
     companyName: string
     city: string
@@ -49,7 +57,8 @@ interface MPI {
   assemblyQuantity: number
   kitReceivedDate: string
   dateReleased: string
-  pages: string
+  pages: number
+  totalPages?: number
   sections: Array<{
   id: string
   title: string
@@ -513,36 +522,6 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
     toast.success('Image removed successfully!')
   }
 
-  const handleDragEnd = (result: DropResult) => {
-    console.log('🔄 Drag and drop result:', result)
-    
-    if (!result.destination || !mpi) {
-      console.log('❌ No destination or no MPI data')
-      return
-    }
-
-    console.log('📋 Original sections:', mpi.sections.map(s => ({ title: s.title, order: s.order })))
-
-    const items = Array.from(mpi.sections)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
-
-    // Update the order property for each section
-    const updatedSections = items.map((section, index) => ({
-      ...section,
-      order: index
-    }))
-
-    console.log('📋 Updated sections:', updatedSections.map(s => ({ title: s.title, order: s.order })))
-
-    setMpi({
-      ...mpi,
-      sections: updatedSections
-    })
-
-    console.log('✅ MPI state updated with new section order')
-    toast.success('Section reordered successfully!')
-  }
 
   const moveSectionUp = (sectionId: string) => {
     console.log('🔼 Move section up called for:', sectionId)
@@ -783,7 +762,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
           position: relative;
         }
         .live-preview-container::after {
-          content: "Form ID: ${mpi?.formId || mpi?._id || 'N/A'}";
+          content: "Form ID: ${mpi?.formId?.formId || mpi?._id || 'N/A'}";
           position: fixed;
           bottom: 0.5in;
           left: 0.5in;
@@ -818,7 +797,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
         }
       `}</style>
       
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-4" data-form-id={mpi?.formId?.formId || mpi?._id || 'N/A'}>
         <div className="w-full">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

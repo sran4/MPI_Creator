@@ -29,7 +29,12 @@ interface CustomerCompany {
 
 interface MPI {
   _id: string
-  formId?: string
+  formId?: {
+    _id: string
+    formId: string
+    formRev: string
+    description?: string
+  }
   jobNumber: string
   oldJobNumber?: string
   mpiNumber: string
@@ -193,7 +198,7 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
         }
       `}</style>
       
-      <div className="min-h-screen" data-form-id={mpi.formId.formId || mpi._id || 'N/A'} data-print-date={new Date().toLocaleDateString() + ', ' + new Date().toLocaleTimeString()}>
+      <div className="min-h-screen" data-form-id={mpi.formId?.formId || mpi._id || 'N/A'} data-print-date={new Date().toLocaleDateString() + ', ' + new Date().toLocaleTimeString()}>
       {/* Print Preview Header - Hidden when printing */}
       <div className="bg-white shadow-sm border-b print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">

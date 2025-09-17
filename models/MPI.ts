@@ -16,6 +16,7 @@ export interface IMPI extends Document {
   mpiNumber: string
   mpiVersion?: string
   engineerId: mongoose.Types.ObjectId
+  formId?: mongoose.Types.ObjectId  // Reference to Form model
   customerCompanyId: mongoose.Types.ObjectId
   customerAssemblyName: string
   assemblyRev: string
@@ -124,6 +125,11 @@ const MPISchema = new Schema<IMPI>({
     ref: 'CustomerCompany',
     required: [true, 'Customer company ID is required'],
   },
+  formId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Form',
+    required: false,
+  },
   customerAssemblyName: {
     type: String,
     required: [true, 'Customer assembly name is required'],
@@ -182,8 +188,11 @@ const MPISchema = new Schema<IMPI>({
 MPISchema.index({ oldJobNumber: 1 })
 MPISchema.index({ engineerId: 1 })
 MPISchema.index({ customerCompanyId: 1 })
+MPISchema.index({ formId: 1 })
 MPISchema.index({ status: 1 })
 MPISchema.index({ isActive: 1 })
+
+
 
 // Text index for search functionality
 MPISchema.index({ 

@@ -20,6 +20,13 @@ interface CustomerCompany {
   state: string
 }
 
+interface Form {
+  _id: string
+  formId: string
+  formRev: string
+  description?: string
+}
+
 interface NewMPIForm {
   customerCompanyId: string
   jobNumber: string
@@ -32,15 +39,21 @@ interface NewMPIForm {
   drawingRev: string
   assemblyQuantity: string
   kitReceivedDate: string
+  formId: string
+  formRev: string
   dateReleased: string
   pages: string
 }
 
 export default function NewMPIPage() {
+  console.log('🎯 NewMPIPage component loaded')
+  
   const [customerCompanies, setCustomerCompanies] = useState<CustomerCompany[]>([])
+  const [forms, setForms] = useState<Form[]>([])
   const [existingJobNumbers, setExistingJobNumbers] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(true)
+  const [isLoadingForms, setIsLoadingForms] = useState(true)
   const [showPreview, setShowPreview] = useState(true)
   const router = useRouter()
 
@@ -53,37 +66,149 @@ export default function NewMPIPage() {
   } = useForm<NewMPIForm>()
 
   const selectedCustomerCompanyId = watch('customerCompanyId')
+  
+  // Debug: Log forms state changes
+  useEffect(() => {
+    console.log('📋 Forms state updated:', forms)
+  }, [forms])
+
+  // Debug: Log customer companies state changes
+  useEffect(() => {
+    console.log('🏢 Customer companies state updated:', customerCompanies)
+  }, [customerCompanies])
 
   useEffect(() => {
     fetchCustomerCompanies()
+    fetchForms()
     fetchExistingJobNumbers()
     // Set default pages estimate
     setValue('pages', '4')
-    // Auto-generate Job No. and MPI No. on page load
-    generateJobNumber()
-    generateMPINumber()
+  }, [])
+
+  // Token validation function
+  const validateToken = (token: string | null): boolean => {
+    if (!token) {
+      console.error('❌ No token found')
+      return false
+    }
+    
+    if (!token.includes('.')) {
+      console.error('❌ Invalid token format - missing dots')
+      localStorage.removeItem('token')
+      return false
+    }
+    
+    try {
+      // Basic JWT structure validation (3 parts separated by dots)
+      const parts = token.split('.')
+      if (parts.length !== 3) {
+        console.error('❌ Invalid token format - wrong number of parts')
+        localStorage.removeItem('token')
+        return false
+      }
+      
+      console.log('✅ Token format is valid')
+      return true
+    } catch (error) {
+      console.error('❌ Token validation error:', error)
+      localStorage.removeItem('token')
+      return false
+    }
+  }
+
+  // Separate useEffect for generating numbers after token is available
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    console.log('🔑 Token check:', token ? 'Token exists' : 'No token found')
+    
+    if (validateToken(token)) {
+      console.log('🚀 Starting auto-generation of numbers...')
+      // Auto-generate Job No. and MPI No. on page load
+      generateJobNumber()
+      generateMPINumber()
+    } else {
+      console.error('❌ Invalid token - cannot generate numbers')
+      toast.error('Please log in to access this page')
+      router.push('/login')
+    }
   }, [])
 
   const fetchCustomerCompanies = async () => {
     try {
+      console.log('🔄 Fetching customer companies...')
       const token = localStorage.getItem('token')
+      if (!token) {
+        console.error('❌ No token available for customer companies')
+        toast.error('Please log in to load customer companies')
+        setIsLoadingCompanies(false)
+        return
+      }
+      
+      // Validate token format
+      if (!token.includes('.')) {
+        console.error('❌ Invalid token format')
+        localStorage.removeItem('token')
+        toast.error('Invalid session. Please log in again.')
+        router.push('/login')
+        setIsLoadingCompanies(false)
+        return
+      }
+      
       const response = await fetch('/api/customer-companies', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
       
+      console.log('📡 Customer companies response status:', response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log('📋 Customer companies data received:', data)
         setCustomerCompanies(data.customerCompanies || [])
+        console.log('✅ Customer companies set in state:', data.customerCompanies?.length || 0, 'companies')
+        if (data.customerCompanies?.length === 0) {
+          console.log('ℹ️ No customer companies found. Please add some companies first.')
+        }
       } else {
-        toast.error('Failed to fetch customer companies')
+        const errorData = await response.json()
+        console.error('❌ Failed to fetch customer companies:', errorData)
+        if (response.status === 401) {
+          localStorage.removeItem('token')
+          toast.error('Session expired. Please log in again.')
+          router.push('/login')
+        } else {
+          toast.error('Failed to fetch customer companies')
+        }
       }
     } catch (error) {
-      console.error('Error fetching customer companies:', error)
+      console.error('❌ Error fetching customer companies:', error)
       toast.error('An error occurred while fetching customer companies')
     } finally {
       setIsLoadingCompanies(false)
+    }
+  }
+
+  const fetchForms = async () => {
+    try {
+      console.log('🔄 Fetching forms...')
+      const response = await fetch('/api/forms')
+      console.log('📡 Forms response status:', response.status)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📋 Forms data received:', data)
+        setForms(data.forms || [])
+        console.log('✅ Forms set in state:', data.forms?.length || 0, 'forms')
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Failed to fetch forms:', errorData)
+        toast.error('Failed to fetch forms')
+      }
+    } catch (error) {
+      console.error('❌ Error fetching forms:', error)
+      toast.error('An error occurred while fetching forms')
+    } finally {
+      setIsLoadingForms(false)
     }
   }
 
@@ -107,7 +232,23 @@ export default function NewMPIPage() {
 
   const generateJobNumber = async () => {
     try {
+      console.log('🔄 Generating job number...')
       const token = localStorage.getItem('token')
+      if (!token) {
+        console.error('❌ No token available for job number generation')
+        toast.error('Please log in to generate job numbers')
+        return
+      }
+      
+      // Validate token format
+      if (!token.includes('.')) {
+        console.error('❌ Invalid token format')
+        localStorage.removeItem('token')
+        toast.error('Invalid session. Please log in again.')
+        router.push('/login')
+        return
+      }
+      
       const response = await fetch('/api/mpi/job-numbers', {
         method: 'POST',
         headers: {
@@ -116,19 +257,50 @@ export default function NewMPIPage() {
         }
       })
 
+      console.log('📡 Job number response status:', response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log('📋 Job number data received:', data)
         const formattedJobNumber = data.jobNumber.replace(/([A-Z])(\d+)/, '$1-$2')
+        console.log('✅ Setting job number:', formattedJobNumber)
         setValue('jobNumber', formattedJobNumber)
+        toast.success('Job number generated successfully!')
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Failed to generate job number:', errorData)
+        if (response.status === 401) {
+          localStorage.removeItem('token')
+          toast.error('Session expired. Please log in again.')
+          router.push('/login')
+        } else {
+          toast.error('Failed to generate job number')
+        }
       }
     } catch (error) {
-      console.error('Error generating job number:', error)
+      console.error('❌ Error generating job number:', error)
+      toast.error('Error generating job number')
     }
   }
 
   const generateMPINumber = async () => {
     try {
+      console.log('🔄 Generating MPI number...')
       const token = localStorage.getItem('token')
+      if (!token) {
+        console.error('❌ No token available for MPI number generation')
+        toast.error('Please log in to generate MPI numbers')
+        return
+      }
+      
+      // Validate token format
+      if (!token.includes('.')) {
+        console.error('❌ Invalid token format')
+        localStorage.removeItem('token')
+        toast.error('Invalid session. Please log in again.')
+        router.push('/login')
+        return
+      }
+      
       const response = await fetch('/api/mpi/mpi-numbers', {
         method: 'POST',
         headers: {
@@ -137,15 +309,33 @@ export default function NewMPIPage() {
         }
       })
 
+      console.log('📡 MPI number response status:', response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log('📋 MPI number data received:', data)
         const formattedMPINumber = data.mpiNumber.replace(/([A-Z]+)(\d+)/, '$1-$2')
+        console.log('✅ Setting MPI number:', formattedMPINumber)
         setValue('mpiNumber', formattedMPINumber)
+        toast.success('MPI number generated successfully!')
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Failed to generate MPI number:', errorData)
+        if (response.status === 401) {
+          localStorage.removeItem('token')
+          toast.error('Session expired. Please log in again.')
+          router.push('/login')
+        } else {
+          toast.error('Failed to generate MPI number')
+        }
       }
     } catch (error) {
-      console.error('Error generating MPI number:', error)
+      console.error('❌ Error generating MPI number:', error)
+      toast.error('Error generating MPI number')
     }
   }
+
+
+
 
   const onSubmit = async (data: NewMPIForm) => {
     setIsLoading(true)
@@ -210,6 +400,8 @@ export default function NewMPIPage() {
           oldJobNumber: data.oldJobNumber,
           mpiNumber: mpiNumber,
           mpiVersion: data.mpiVersion,
+          formId: data.formId,        // Add this line
+          formRev: data.formRev,      // Add this line
           customerAssemblyName: data.customerAssemblyName,
           assemblyRev: data.assemblyRev,
           drawingName: data.drawingName,
@@ -316,6 +508,73 @@ export default function NewMPIPage() {
                       {/* Header Section - Professional Layout */}
                       <div className="bg-white/5 border border-white/10 rounded-lg p-6 max-h-[80vh] overflow-y-auto">
                                                 
+                        {/* Debug Section - Remove after testing */}
+                        <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
+                          <h3 className="text-yellow-400 font-bold mb-2">Debug Panel</h3>
+                          <div className="flex space-x-2">
+                            <Button 
+                              type="button" 
+                              onClick={() => {
+                                console.log('🧪 Manual test - generating job number')
+                                generateJobNumber()
+                              }}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              Test Job Number
+                            </Button>
+                            <Button 
+                              type="button" 
+                              onClick={() => {
+                                console.log('🧪 Manual test - generating MPI number')
+                                generateMPINumber()
+                              }}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              Test MPI Number
+                            </Button>
+                            <Button 
+                              type="button" 
+                              onClick={() => {
+                                console.log('🧪 Manual test - fetching forms')
+                                fetchForms()
+                              }}
+                              className="bg-purple-600 hover:bg-purple-700 text-white"
+                            >
+                              Test Forms
+                            </Button>
+                            <Button 
+                              type="button" 
+                              onClick={() => {
+                                console.log('🧪 Manual test - fetching companies')
+                                fetchCustomerCompanies()
+                              }}
+                              className="bg-orange-600 hover:bg-orange-700 text-white"
+                            >
+                              Test Companies
+                            </Button>
+                            <Button 
+                              type="button" 
+                              onClick={async () => {
+                                console.log('🧪 Manual test - testing database')
+                                try {
+                                  const response = await fetch('/api/test')
+                                  const data = await response.json()
+                                  console.log('🧪 Test API response:', data)
+                                } catch (error) {
+                                  console.error('❌ Test API error:', error)
+                                }
+                              }}
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              Test DB
+                            </Button>
+                          </div>
+                          <div className="mt-2 text-sm text-yellow-300">
+                            <p>Forms: {forms.length} | Companies: {customerCompanies.length}</p>
+                            <p>Loading Forms: {isLoadingForms ? 'Yes' : 'No'} | Loading Companies: {isLoadingCompanies ? 'Yes' : 'No'}</p>
+                          </div>
+                        </div>
+
                         {/* Optimized Input Layout - 2 Inputs Per Row */}
                         <div className="space-y-6">
                           {/* Row 1: Job No. & Old Job No. */}
@@ -403,8 +662,60 @@ export default function NewMPIPage() {
                               )}
                             </div>
                           </div>
+                          {/* Row 3: Form ID & Form Revision */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <Label htmlFor="formId" className="text-white">
+                                <FileText className="h-4 w-4 inline mr-2" />
+                                Form ID
+                              </Label>
+                              <Select onValueChange={(value) => {
+                                setValue('formId', value)
+                                // Auto-fill form revision when form is selected (optional)
+                                const selectedForm = forms.find(form => form._id === value)
+                                if (selectedForm) {
+                                  // Only auto-fill if the field is empty
+                                  const currentFormRev = watch('formRev')
+                                  if (!currentFormRev || currentFormRev.trim() === '') {
+                                    setValue('formRev', selectedForm.formRev)
+                                  }
+                                }
+                              }}>
+                                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                  <SelectValue placeholder="Select a form..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {forms.length === 0 ? (
+                                    <SelectItem value="no-forms" disabled>
+                                      {isLoadingForms ? 'Loading forms...' : 'No forms available'}
+                                    </SelectItem>
+                                  ) : (
+                                    forms.map((form) => (
+                                      <SelectItem key={form._id} value={form._id}>
+                                        {form.formId}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="formRev" className="text-white">
+                                <FileText className="h-4 w-4 inline mr-2" />
+                                Form Revision
+                              </Label>
+                              <Input
+                                id="formRev"
+                                type="text"
+                                className="bg-white/10 border-white/20 text-white"
+                                placeholder="Enter form revision"
+                                {...register('formRev')}
+                              />
+                            </div>
+                          </div>
   
-                          {/* Row 3: Customer Name & Assembly Quantity */}
+                          {/* Row 4: Customer Name & Assembly Quantity */}
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <Label htmlFor="customerCompanyId" className="text-white font-medium">
@@ -417,7 +728,7 @@ export default function NewMPIPage() {
                                 <SelectContent>
                                   {customerCompanies.length === 0 ? (
                                     <SelectItem value="no-companies" disabled>
-                                      No companies available
+                                      {isLoadingCompanies ? 'Loading companies...' : 'No companies available'}
                                     </SelectItem>
                                   ) : (
                                     customerCompanies.map((company) => (
@@ -449,7 +760,7 @@ export default function NewMPIPage() {
                             </div>
                           </div>
   
-                          {/* Row 4: Customer Assembly Name & Assembly Rev */}
+                          {/* Row 5: Customer Assembly Name & Assembly Rev */}
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <Label htmlFor="customerAssemblyName" className="text-white font-medium">
@@ -482,7 +793,7 @@ export default function NewMPIPage() {
                             </div>
                           </div>
   
-                          {/* Row 5: Drawing Name & Drawing Rev */}
+                          {/* Row 6: Drawing Name & Drawing Rev */}
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <Label htmlFor="drawingName" className="text-white font-medium">
@@ -515,7 +826,7 @@ export default function NewMPIPage() {
                             </div>
                           </div>
   
-                          {/* Row 6: Kit Received Date & Date Released */}
+                          {/* Row 7: Kit Received Date & Date Released */}
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <Label htmlFor="kitReceivedDate" className="text-white font-medium">
@@ -548,8 +859,7 @@ export default function NewMPIPage() {
                               )}
                             </div>
                           </div>
-  
-                          {/* Row 7: Pages (Full Width) */}
+                          {/* Row 8: Pages (Full Width) */}
                           <div className="space-y-2">
                             <Label htmlFor="pages" className="text-white font-medium">
                               Pages <span className="text-red-400">*</span>

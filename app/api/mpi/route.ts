@@ -70,6 +70,8 @@ export async function POST(request: NextRequest) {
       oldJobNumber, 
       mpiNumber, 
       mpiVersion,
+      formId,        // Add this
+      formRev,       // Add this
       customerAssemblyName,
       assemblyRev,
       drawingName,
@@ -154,6 +156,8 @@ export async function POST(request: NextRequest) {
       kitReceivedDate: new Date(kitReceivedDate),
       dateReleased,
       pages,
+      formId: formId || undefined,
+      formRev: formRev || undefined,
       sections: defaultSections,
       status: 'draft',
       versionHistory: [{
