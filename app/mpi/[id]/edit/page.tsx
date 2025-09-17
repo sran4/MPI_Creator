@@ -14,6 +14,7 @@ import {
   ArrowLeft, 
   ArrowUp,
   FileText,
+  Printer,
   Folder,
   Users,
   Search,
@@ -741,8 +742,8 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-6">
-        <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-4">
+        <div className="w-full">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
@@ -791,9 +792,9 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
           </div>
 
         {/* Main Content Area */}
-        <div className={`mt-8 ${showSplitScreen ? 'xl:flex xl:space-x-6' : ''}`}>
+        <div className={`mt-8 ${showSplitScreen ? 'flex space-x-6' : ''}`}>
           {/* Editor Section */}
-          <div className={`${showSplitScreen ? 'xl:w-3/5' : 'w-full'}`}>
+          <div className={`${showSplitScreen ? 'w-3/5' : 'w-full'}`}>
             {/* MPI Sections */}
             <div className="space-y-6">
                 {mpi.sections.map((section, sectionIndex) => {
@@ -1055,18 +1056,37 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
 
           {/* Print Preview Section */}
           {showSplitScreen && (
-            <div className="xl:w-2/5 mt-8 xl:mt-0">
+            <div className="w-2/5">
               <div className="glassmorphism-card p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white">Print Preview</h3>
-                  <Button
-                    size="sm"
-                    onClick={() => window.open(`/mpi/${mpi._id}/print-preview`, '_blank')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Open Full Preview
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => window.open(`/mpi/${mpi._id}/print-preview`, '_blank')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Full Preview
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const printWindow = window.open(`/mpi/${mpi._id}/print-preview`, '_blank')
+                        if (printWindow) {
+                          printWindow.onload = () => {
+                            setTimeout(() => {
+                              printWindow.print()
+                            }, 1000)
+                          }
+                        }
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print
+                    </Button>
+                  </div>
                 </div>
                 <div className="bg-white rounded-lg p-6 shadow-lg max-h-[80vh] overflow-y-auto">
                   <div className="text-black">

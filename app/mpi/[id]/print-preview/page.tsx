@@ -141,24 +141,39 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
 
   return (
     <>
-      {/* Print-specific CSS for page numbering */}
+      {/* Print-specific CSS for page numbering and Form ID */}
       <style jsx global>{`
         @media print {
           @page {
             margin: 0.5in;
-            @bottom-center {
-              content: counter(page) " of " counter(pages);
+            size: 8.5in 11in;
+            @bottom-left {
+              content: "Form ID: " attr(data-form-id);
               font-size: 10pt;
               color: #666;
+              font-family: Arial, sans-serif;
+            }
+            @bottom-right {
+              content: "Page " counter(page) " of " counter(pages);
+              font-size: 10pt;
+              color: #666;
+              font-family: Arial, sans-serif;
             }
           }
           body {
             counter-reset: page;
+            font-family: Arial, sans-serif;
+          }
+          .print-page {
+            page-break-after: always;
+          }
+          .print-page:last-child {
+            page-break-after: avoid;
           }
         }
       `}</style>
       
-      <div className="min-h-screen">
+      <div className="min-h-screen" data-form-id={mpi.formId || 'N/A'}>
       {/* Print Preview Header - Hidden when printing */}
       <div className="bg-white shadow-sm border-b print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -199,14 +214,14 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
 
       {/* Print Preview Content */}
       <div className="max-w-4xl mx-auto p-6 print:p-0 print:max-w-none">
-        <div className="bg-white shadow-lg print:shadow-none">
+        <div className="bg-white shadow-lg print:shadow-none print-page">
           {/* MPI Header */}
           <div className="text-center mb-8 pt-10 border-b-2 border-gray-300 pb-6 print:mb-6">
             <h1 className="text-3xl font-bold mb-4 text-gray-900">Manufacturing Process Instructions</h1>
           </div>
 
           {/* Customer Information */}
-          <div className="mb-8 border-2 border-gray-300 rounded-lg p-6 print:mb-6 print:rounded-none">
+          <div className="mb-8 border-2 border-gray-300 rounded-lg p-6 print:mb-6 print:rounded-none print-page">
             <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Assembly Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
               <div>
@@ -257,7 +272,7 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
             {mpi.sections.map((section, index) => {
               console.log('🖨️ Print Preview - Section:', section.title, 'Document ID:', section.documentId)
               return (
-              <div key={section.id} className="border-2 border-gray-300 rounded-lg p-6 break-inside-avoid print:rounded-none print:mb-4">
+              <div key={section.id} className="border-2 border-gray-300 rounded-lg p-6 break-inside-avoid print:rounded-none print:mb-4 print-page">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2 flex justify-between items-center">
                   <span>{section.title}</span>
                   {section.documentId && (
