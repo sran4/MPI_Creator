@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
     let isUnique = false
 
     while (!isUnique) {
-      // Format: MPI + 6-digit number with leading zeros
-      mpiNumber = `MPI${counter.toString().padStart(6, '0')}`
+      // Format: MPI- + 6-digit number with leading zeros
+      mpiNumber = `MPI-${counter.toString().padStart(6, '0')}`
       
       console.log(`🔍 Checking MPI number: ${mpiNumber}`)
       

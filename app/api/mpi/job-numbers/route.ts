@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
     let isUnique = false
 
     while (!isUnique) {
-      // Format: U + 6-digit number with leading zeros
-      jobNumber = `U${counter.toString().padStart(6, '0')}`
+      // Format: U- + 6-digit number with leading zeros
+      jobNumber = `U-${counter.toString().padStart(6, '0')}`
       
       console.log(`🔍 Checking job number: ${jobNumber}`)
       
