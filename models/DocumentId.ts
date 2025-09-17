@@ -30,7 +30,6 @@ const DocumentIdSchema = new Schema<IDocumentId>({
 })
 
 // Index for better performance
-DocumentIdSchema.index({ docId: 1 })
 DocumentIdSchema.index({ isActive: 1 })
 
 // Case-insensitive unique index for docId

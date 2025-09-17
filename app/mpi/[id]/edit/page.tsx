@@ -679,8 +679,8 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                 </Button>
               </Link>
               <div>
-              <h1 className="text-3xl font-bold text-white">MPI Editor</h1>
-              <p className="text-white/70 mt-1">{mpi.customerAssemblyName} - {mpi.mpiNumber} (Version {mpi.mpiVersion})</p>
+              <h1 className="text-4xl font-bold text-white">MPI Editor</h1>
+              <p className="text-white/70 font-semibold text-red-500 mt-1">{mpi.customerCompanyId.companyName}-({mpi.customerAssemblyName}) - {mpi.mpiNumber} (Rev. - {mpi.mpiVersion})</p>
                 </div>
               </div>
           <div className="flex items-center space-x-3">
@@ -778,56 +778,76 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                       </div>
                       </div>
                         <div className="flex items-center space-x-2">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setSelectedSectionId(section.id)
-                              setSelectedTasks([])
-                              setShowBulkTaskModal(true)
-                            }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white border-0"
-                          >
-                            <Clipboard className="h-4 w-4 mr-1" />
-                            Insert Tasks
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setSelectedSectionId(section.id)
-                              setShowAddImageModal(true)
-                            }}
-                            className="bg-purple-600 hover:bg-purple-700 text-white border-0"
-                          >
-                            <ImageIcon className="h-4 w-4 mr-1" />
-                            Add Image
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setSelectedSectionId(section.id)
-                              setShowInsertDocIdModal(true)
-                            }}
-                            className="bg-orange-600 hover:bg-orange-700 text-white border-0"
-                          >
-                            <FileText className="h-4 w-4 mr-1" />
-                            Add Doc ID to Title
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => openEditSectionModal({id: section.id, title: section.title})}
-                            className="bg-yellow-600 hover:bg-yellow-700 text-white border-0"
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleDeleteSection(section.id)}
-                            className="bg-red-600 hover:bg-red-700 text-white border-0"
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
+                          <div className="relative group">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSectionId(section.id)
+                                setSelectedTasks([])
+                                setShowBulkTaskModal(true)
+                              }}
+                              className="bg-blue-600 hover:bg-blue-700 text-white border-0 p-2"
+                            >
+                              <Clipboard className="h-4 w-4" />
+                            </Button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                              Insert Tasks
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSectionId(section.id)
+                                setShowAddImageModal(true)
+                              }}
+                              className="bg-purple-600 hover:bg-purple-700 text-white border-0 p-2"
+                            >
+                              <ImageIcon className="h-4 w-4" />
+                            </Button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                              Add Image
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSectionId(section.id)
+                                setShowInsertDocIdModal(true)
+                              }}
+                              className="bg-orange-600 hover:bg-orange-700 text-white border-0 p-2"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                              Add Doc ID to Title
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <Button
+                              size="sm"
+                              onClick={() => openEditSectionModal({id: section.id, title: section.title})}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white border-0 p-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                              Edit
+                            </div>
+                          </div>
+                          <div className="relative group">
+                            <Button
+                              size="sm"
+                              onClick={() => handleDeleteSection(section.id)}
+                              className="bg-red-600 hover:bg-red-700 text-white border-0 p-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                              Delete
+                            </div>
+                          </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -994,40 +1014,35 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
                           <span className="font-semibold">Old Job No:</span> {mpi.oldJobNumber || 'N/A'}
                         </div>
                         <div>
-                          <span className="font-semibold">Customer Assembly Rev:</span> {mpi.assemblyRev || 'N/A'}
+                          <span className="font-semibold">Customer:</span> {mpi.customerCompanyId?.companyName || 'N/A'}
                         </div>
                         <div>
-                          <span className="font-semibold">Customer:</span> {mpi.customerCompanyId?.companyName || 'N/A'}
+                          <span className="font-semibold">Assembly Quantity:</span> {mpi.assemblyQuantity || 'N/A'}
                         </div>
                         <div>
                           <span className="font-semibold">Customer Assembly Name:</span> {mpi.customerAssemblyName || 'N/A'}
                         </div>
                         <div>
-                          <span className="font-semibold">Date Released:</span> {mpi.dateReleased || 'N/A'}
+                          <span className="font-semibold">Customer Assembly Rev:</span> {mpi.assemblyRev || 'N/A'}
+                        </div>    
+                        <div>
+                          <span className="font-semibold">Drawing Name:</span> {mpi.drawingName || 'N/A'}
                         </div>
                         <div>
-                          <span className="font-semibold">Pages:</span> {mpi.totalPages || mpi.pages || 'N/A'}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Form ID:</span> N/A
-                        </div>
-                        <div>
-                          <span className="font-semibold">Form Rev:</span> N/A
+                          <span className="font-semibold">Drawing Rev:</span> {mpi.drawingRev || 'N/A'}
                         </div>
                         <div>
                           <span className="font-semibold">Kit receive date:</span> {mpi.kitReceivedDate ? new Date(mpi.kitReceivedDate).toLocaleDateString() : 'N/A'}
                         </div>
                         <div>
-                          <span className="font-semibold">Kit release date:</span> {mpi.dateReleased || 'N/A'}
+                          <span className="font-semibold">Kit release date:</span> {mpi.dateReleased ? new Date(mpi.dateReleased).toLocaleDateString() : 'N/A'}
                         </div>
-                      </div>
-                    </div>
+                        <div>
+                          <span className="font-semibold">Pages:</span> {mpi.totalPages || mpi.pages || 'N/A'}
+                        </div>      
+                        
 
-                    {/* Applicable Documents Section */}
-                    <div className="mb-6 border-2 border-gray-300 rounded-lg p-6">
-                      <h2 className="text-xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">Applicable Documents</h2>
-                      <div className="text-gray-500 italic">
-                        No content added to this section yet.
+                     
                       </div>
                     </div>
 

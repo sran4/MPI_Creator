@@ -265,7 +265,7 @@ export default function NewMPIPage() {
   if (isLoadingCompanies) {
     return (
       <div className="min-h-screen gradient-bg dark:gradient-bg flex items-center justify-center">
-        <div className="text-white text-xl">Loading Companies...</div>
+        <div className="text-white text-xl">Loading...</div>
       </div>
     )
   }
@@ -617,34 +617,35 @@ export default function NewMPIPage() {
                                   <div>
                                     <span className="font-semibold">Old Job No:</span> {watch('oldJobNumber') || 'N/A'}
                                   </div>
-                                  <div>
-                                    <span className="font-semibold">Customer Assembly Rev:</span> {watch('assemblyRev') || 'N/A'}
-                                  </div>
+                                 
                                   <div>
                                     <span className="font-semibold">Customer:</span> {customerCompanies.find(c => c._id === watch('customerCompanyId'))?.companyName || 'Not selected'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Assembly Quantity:</span> { watch('assemblyQuantity') || 'Not selected'}
                                   </div>
                                   <div>
                                     <span className="font-semibold">Customer Assembly Name:</span> {watch('customerAssemblyName') || 'Not specified'}
                                   </div>
                                   <div>
-                                    <span className="font-semibold">Date Released:</span> {watch('dateReleased') || 'N/A'}
+                                    <span className="font-semibold">Customer Assembly Rev:</span> {watch('assemblyRev') || 'N/A'}
+                                  </div>    
+                                  <div>
+                                    <span className="font-semibold">Drawing Name:</span> {watch('drawingName') || 'N/A'}
                                   </div>
                                   <div>
-                                    <span className="font-semibold">Pages:</span> {watch('pages') || '4'}
-                                  </div>
-                                  <div>
-                                    <span className="font-semibold">Form ID:</span> N/A
-                                  </div>
-                                  <div>
-                                    <span className="font-semibold">Form Rev:</span> N/A
+                                    <span className="font-semibold">Drawing Rev:</span> {watch('drawingRev') || 'N/A'}
                                   </div>
                                   <div>
                                     <span className="font-semibold">Kit receive date:</span> {watch('kitReceivedDate') ? new Date(watch('kitReceivedDate')).toLocaleDateString() : 'N/A'}
                                   </div>
                                   <div>
-                                    <span className="font-semibold">Kit release date:</span> {watch('dateReleased') || 'N/A'}
+                                    <span className="font-semibold">Kit release date:</span> {watch('dateReleased') ? new Date(watch('dateReleased')).toLocaleDateString() : 'N/A'}
                                   </div>
-                                </div>
+                                  <div>
+                                    <span className="font-semibold">Pages:</span> {watch('pages') || '4'}
+                                  </div>                                  
+                                </div>                                
                               </div>
 
                               {/* Applicable Documents Section */}

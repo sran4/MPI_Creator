@@ -180,7 +180,7 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
               <Button
                 variant="outline"
                 onClick={handleRefresh}
-                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="bg-gray-600 border-gray-300 text-white hover:bg-gray-700"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
@@ -201,7 +201,7 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
       <div className="max-w-4xl mx-auto p-6 print:p-0 print:max-w-none">
         <div className="bg-white shadow-lg print:shadow-none">
           {/* MPI Header */}
-          <div className="text-center mb-8 border-b-2 border-gray-300 pb-6 print:mb-6">
+          <div className="text-center mb-8 pt-10 border-b-2 border-gray-300 pb-6 print:mb-6">
             <h1 className="text-3xl font-bold mb-4 text-gray-900">Manufacturing Process Instructions</h1>
           </div>
 
@@ -222,32 +222,33 @@ export default function PrintPreviewPage({ params }: { params: { id: string } })
                 <span className="font-semibold">Old Job No:</span> {mpi.oldJobNumber || 'N/A'}
               </div>
               <div>
-                <span className="font-semibold">Customer Assembly Rev:</span> {mpi.assemblyRev || 'N/A'}
+                <span className="font-semibold">Customer:</span> {mpi.customerCompanyId.companyName}
               </div>
               <div>
-                <span className="font-semibold">Customer:</span> {mpi.customerCompanyId.companyName}
+                <span className="font-semibold">Assembly Quantity:</span> {mpi.assemblyQuantity || 'N/A'}
               </div>
               <div>
                 <span className="font-semibold">Customer Assembly Name:</span> {mpi.customerAssemblyName}
               </div>
               <div>
-                <span className="font-semibold">Date Released:</span> {mpi.dateReleased || 'N/A'}
+                <span className="font-semibold">Customer Assembly Rev:</span> {mpi.assemblyRev || 'N/A'}
+              </div>  
+              <div>
+                <span className="font-semibold">Drawing Name:</span> {mpi.drawingName || 'N/A'}
+              </div>
+              <div>
+                <span className="font-semibold">Drawing Rev:</span> {mpi.drawingRev || 'N/A'}
+              </div>
+              <div>
+                <span className="font-semibold">Kit receive date:</span> {new Date(mpi.kitReceivedDate).toLocaleDateString() || 'N/A'}
+              </div>              
+              <div>
+                <span className="font-semibold">Date Released:</span> {new Date(mpi.dateReleased).toLocaleDateString() || 'N/A'}
               </div>
               <div>
                 <span className="font-semibold">Pages:</span> {mpi.pages || 'N/A'}
-              </div>
-              <div>
-                <span className="font-semibold">Form ID:</span> {mpi.formId || 'N/A'}
-              </div>
-              <div>
-                <span className="font-semibold">Form Rev:</span> {mpi.formRev || 'N/A'}
-              </div>
-              <div>
-                <span className="font-semibold">Kit receive date:</span> {new Date(mpi.kitReceivedDate).toLocaleDateString()}
-              </div>
-              <div>
-                <span className="font-semibold">Kit release date:</span> {mpi.dateReleased || 'N/A'}
-              </div>
+              </div>        
+            
             </div>
           </div>
 
