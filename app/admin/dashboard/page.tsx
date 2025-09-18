@@ -612,6 +612,12 @@ export default function AdminDashboardPage() {
                     <option value="rejected">Rejected</option>
                     <option value="archived">Archived</option>
                   </select>
+                  <Link href="/admin/mpi/new">
+                    <Button className="bg-red-600 hover:bg-red-700 text-white whitespace-nowrap">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create MPI
+                    </Button>
+                  </Link>
                 </div>
               </div>
               
@@ -690,7 +696,7 @@ export default function AdminDashboardPage() {
                               </Button>
                             )}
                             
-                            <Link href={`/mpi/${mpi._id}/edit`}>
+                            <Link href={`/admin/mpi/${mpi._id}/view`}>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -710,11 +716,19 @@ export default function AdminDashboardPage() {
                   <div className="text-center py-8">
                     <FileText className="h-12 w-12 text-white/40 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-white mb-2">No MPIs found</h3>
-                    <p className="text-white/70">
+                    <p className="text-white/70 mb-4">
                       {mpiSearchTerm || mpiStatusFilter !== 'all' 
                         ? 'Try adjusting your search or filter criteria.' 
                         : 'No MPIs have been created yet.'}
                     </p>
+                    {!mpiSearchTerm && mpiStatusFilter === 'all' && (
+                      <Link href="/admin/mpi/new">
+                        <Button className="bg-red-600 hover:bg-red-700 text-white">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create New MPI
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>

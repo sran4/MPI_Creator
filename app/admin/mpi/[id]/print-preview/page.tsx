@@ -7,7 +7,7 @@ import {
     RefreshCw
 } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
@@ -50,22 +50,17 @@ interface MPI {
   sections: MPISection[]
 }
 
-interface PrintPreviewPageProps {
-  params: {
-    id: string
-  }
-}
-
-export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
+export default function AdminMPIPrintPreviewPage() {
   const [mpi, setMpi] = useState<MPI | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState(new Date())
+  const params = useParams()
   const router = useRouter()
 
   const fetchMPI = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`/api/mpi/${params.id}`, {
+      const response = await fetch(`/api/admin/mpis/${params.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -278,13 +273,13 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href={`/mpi/${params.id}/edit`}>
+              <Link href={`/admin/mpi/${params.id}/view`}>
                 <Button variant="ghost" size="icon" className="text-gray-600 hover:bg-gray-100">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Print Preview</h1>
+                <h1 className="text-xl font-semibold text-gray-900">Print Preview (Admin)</h1>
                 <p className="text-sm text-gray-500">
                   Real-time preview • Last updated: {lastUpdated.toLocaleTimeString()}
                 </p>
