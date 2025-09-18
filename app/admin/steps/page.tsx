@@ -1,27 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  ArrowLeft, 
-  Save, 
-  X,
-  FileText,
-  Folder,
-  Users,
-  Search
+import { motion } from 'framer-motion'
+import {
+    ArrowLeft,
+    ChevronLeft,
+    ChevronRight,
+    Edit,
+    FileText,
+    Folder,
+    Plus,
+    Save,
+    Search,
+    Trash2,
+    Users,
+    X
 } from 'lucide-react'
-import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface ProcessItem {
   _id: string
@@ -52,6 +53,7 @@ export default function TasksPage() {
   const [showForm, setShowForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [categoryPages, setCategoryPages] = useState<Record<string, number>>({})
   const [formData, setFormData] = useState<TaskForm>({
     step: '',
     processItemId: ''
@@ -230,6 +232,46 @@ export default function TasksPage() {
     return matchesSearch && matchesCategory
   })
 
+  // Group tasks by category
+  const groupedTasks = filteredTasks.reduce((acc, task) => {
+    const categoryName = task.categoryName
+    if (!acc[categoryName]) {
+      acc[categoryName] = []
+    }
+    acc[categoryName].push(task)
+    return acc
+  }, {} as Record<string, Task[]>)
+
+  // Sort categories alphabetically
+  const sortedCategories = Object.keys(groupedTasks).sort()
+
+  // Pagination logic
+  const tasksPerPage = 5
+  
+  const getCurrentPage = (categoryName: string) => {
+    return categoryPages[categoryName] || 1
+  }
+
+  const setCurrentPage = (categoryName: string, page: number) => {
+    setCategoryPages(prev => ({
+      ...prev,
+      [categoryName]: page
+    }))
+  }
+
+  const getPaginatedTasks = (categoryName: string) => {
+    const tasks = groupedTasks[categoryName] || []
+    const currentPage = getCurrentPage(categoryName)
+    const startIndex = (currentPage - 1) * tasksPerPage
+    const endIndex = startIndex + tasksPerPage
+    return tasks.slice(startIndex, endIndex)
+  }
+
+  const getTotalPages = (categoryName: string) => {
+    const tasks = groupedTasks[categoryName] || []
+    return Math.ceil(tasks.length / tasksPerPage)
+  }
+
   const wordCount = formData.step.trim().split(/\s+/).filter(word => word.length > 0).length
 
   if (isLoading) {
@@ -264,6 +306,45 @@ export default function TasksPage() {
             <Plus className="h-4 w-4 mr-2" />
             Add Task
           </Button>
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Folder className="h-5 w-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-white/70 text-sm">Categories</p>
+                <p className="text-white text-xl font-semibold">{sortedCategories.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <FileText className="h-5 w-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-white/70 text-sm">Total Tasks</p>
+                <p className="text-white text-xl font-semibold">{filteredTasks.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Users className="h-5 w-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-white/70 text-sm">Total Uses</p>
+                <p className="text-white text-xl font-semibold">
+                  {filteredTasks.reduce((sum, task) => sum + task.usageCount, 0)}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Filters */}
@@ -386,68 +467,154 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* Tasks Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTasks.map((task, index) => (
-            <motion.div
-              key={task._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className="glassmorphism-card glassmorphism-card-hover">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-white text-lg flex items-center">
-                        <FileText className="h-5 w-5 mr-2 text-blue-400" />
-                        Task
-                      </CardTitle>
-                      <div className="flex items-center mt-2">
-                        <Folder className="h-4 w-4 mr-1 text-white/60" />
-                        <span className="text-white/70 text-sm">{task.categoryName}</span>
+        {/* Category-based Tasks */}
+        <div className="space-y-6">
+          {sortedCategories.map((categoryName, categoryIndex) => {
+            const categoryTasks = groupedTasks[categoryName]
+            const totalUsage = categoryTasks.reduce((sum, task) => sum + task.usageCount, 0)
+            const paginatedTasks = getPaginatedTasks(categoryName)
+            const totalPages = getTotalPages(categoryName)
+            const currentPage = getCurrentPage(categoryName)
+            
+            return (
+              <motion.div
+                key={categoryName}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: categoryIndex * 0.1 }}
+              >
+                <Card className="glassmorphism-card">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-blue-500/20 rounded-lg">
+                          <Folder className="h-6 w-6 text-blue-400" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-white text-xl flex items-center">
+                            {categoryName}
+                          </CardTitle>
+                          <div className="flex items-center space-x-4 mt-1">
+                            <span className="text-white/70 text-sm">
+                              {categoryTasks.length} task{categoryTasks.length !== 1 ? 's' : ''}
+                            </span>
+                            <div className="flex items-center text-white/70 text-sm">
+                              <Users className="h-4 w-4 mr-1" />
+                              {totalUsage} total uses
+                            </div>
+                            {totalPages > 1 && (
+                              <span className="text-white/60 text-sm">
+                                Page {currentPage} of {totalPages}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(task)}
-                        className="text-blue-400 hover:bg-blue-400/10 p-2"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(task._id, task.step)}
-                        className="text-red-400 hover:bg-red-400/10 p-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      {paginatedTasks.map((task, taskIndex) => (
+                        <div
+                          key={task._id}
+                          className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="text-white/80 text-sm mb-2">
+                                {task.step}
+                              </p>
+                              <div className="flex items-center space-x-4 text-xs text-white/60">
+                                <div className="flex items-center">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  {task.usageCount} uses
+                                </div>
+                                <div className="flex items-center">
+                                  <span>Created: {new Date(task.createdAt).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex space-x-1 ml-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(task)}
+                                className="text-blue-400 hover:bg-blue-400/10 p-2"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(task._id, task.step)}
+                                className="text-red-400 hover:bg-red-400/10 p-2"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-white/80 text-sm mb-4 line-clamp-3">
-                    {task.step}
-                  </p>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center text-white/70">
-                      <Users className="h-4 w-4 mr-1" />
-                      {task.usageCount} uses
-                    </div>
-                    <div className="flex items-center text-white/70">
-                      <span>{new Date(task.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                    
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                        <div className="text-white/70 text-sm">
+                          Showing {((currentPage - 1) * tasksPerPage) + 1} to {Math.min(currentPage * tasksPerPage, categoryTasks.length)} of {categoryTasks.length} tasks
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCurrentPage(categoryName, currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            Previous
+                          </Button>
+                          
+                          {/* Page Numbers */}
+                          <div className="flex items-center space-x-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                              <Button
+                                key={page}
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setCurrentPage(categoryName, page)}
+                                className={`w-8 h-8 p-0 text-sm ${
+                                  page === currentPage
+                                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                                }`}
+                              >
+                                {page}
+                              </Button>
+                            ))}
+                          </div>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCurrentPage(categoryName, currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Next
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )
+          })}
         </div>
 
-        {filteredTasks.length === 0 && (
+        {sortedCategories.length === 0 && (
           <div className="text-center py-12">
             <FileText className="h-16 w-16 text-white/30 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white/70 mb-2">No Tasks Found</h3>

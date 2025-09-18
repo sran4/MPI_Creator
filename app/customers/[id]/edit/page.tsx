@@ -5,10 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Building, Home, Mail, MapPin, Phone, User } from 'lucide-react'
+import { ArrowLeft, Building, Home, Mail, MapPin, Phone, Save, User, X } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 
@@ -20,27 +20,95 @@ interface CustomerCompanyForm {
   email?: string
   phone?: string
   address?: string
+  isActive: boolean
 }
 
-export default function NewCustomerPage() {
-  const [isLoading, setIsLoading] = useState(false)
+interface CustomerCompany {
+  _id: string
+  companyName: string
+  city: string
+  state: string
+  contactPerson?: string
+  email?: string
+  phone?: string
+  address?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export default function EditCustomerPage() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [customerCompany, setCustomerCompany] = useState<CustomerCompany | null>(null)
   const router = useRouter()
+  const params = useParams()
 
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
+    setValue,
+    watch
   } = useForm<CustomerCompanyForm>({
     mode: 'onChange'
   })
 
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
+    if (params.id) {
+      fetchCustomerCompany(params.id as string)
+    }
+  }, [params.id, router])
+
+  const fetchCustomerCompany = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/customer-companies/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        const company = result.customerCompany
+        setCustomerCompany(company)
+        
+        // Set form values
+        setValue('companyName', company.companyName)
+        setValue('city', company.city)
+        setValue('state', company.state)
+        setValue('contactPerson', company.contactPerson || '')
+        setValue('email', company.email || '')
+        setValue('phone', company.phone || '')
+        setValue('address', company.address || '')
+        setValue('isActive', company.isActive)
+      } else {
+        toast.error('Failed to fetch customer company')
+        router.push('/customers')
+      }
+    } catch (error) {
+      console.error('Error fetching customer company:', error)
+      toast.error('An error occurred while fetching customer company')
+      router.push('/customers')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const onSubmit = async (data: CustomerCompanyForm) => {
-    setIsLoading(true)
+    setIsSaving(true)
     
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/customer-companies', {
-        method: 'POST',
+      const response = await fetch(`/api/customer-companies/${params.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -51,17 +119,43 @@ export default function NewCustomerPage() {
       const result = await response.json()
 
       if (response.ok) {
-        toast.success('Customer Company created successfully!')
-        router.push('/dashboard')
+        toast.success('Customer company updated successfully!')
+        router.push('/customers')
       } else {
-        toast.error(result.error || 'Failed to create customer company')
+        toast.error(result.error || 'Failed to update customer company')
       }
     } catch (error) {
-      console.error('Error creating customer company:', error)
-      toast.error('An error occurred while creating customer company')
+      console.error('Error updating customer company:', error)
+      toast.error('An error occurred while updating customer company')
     } finally {
-      setIsLoading(false)
+      setIsSaving(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen gradient-bg dark:gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="mt-4 text-white opacity-80">Loading customer company...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!customerCompany) {
+    return (
+      <div className="min-h-screen gradient-bg dark:gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Customer Company Not Found</h2>
+          <Link href="/customers">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              Back to Customers
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -79,14 +173,14 @@ export default function NewCustomerPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/dashboard">
+              <Link href="/customers">
                 <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-2">Create New Customer Company</h1>
-                <p className="text-white opacity-80">Add a new customer company to the system</p>
+                <h1 className="text-3xl font-bold text-white mb-2">Edit Customer Company</h1>
+                <p className="text-white opacity-80">Update customer company information</p>
               </div>
             </div>
           </div>
@@ -107,7 +201,7 @@ export default function NewCustomerPage() {
                 Customer Company Information
               </CardTitle>
               <CardDescription className="text-white opacity-80">
-                Fill in the customer company details. Fields marked with * are required.
+                Update the customer company details. Fields marked with * are required.
               </CardDescription>
             </CardHeader>
             
@@ -327,23 +421,59 @@ export default function NewCustomerPage() {
                   </div>
                 </div>
 
+                {/* Status Toggle */}
+                <div className="space-y-2">
+                  <Label className="text-white flex items-center">
+                    <span className="mr-2">📊</span>
+                    Company Status
+                  </Label>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setValue('isActive', !watch('isActive'))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        watch('isActive') ? 'bg-green-600' : 'bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          watch('isActive') ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span className={`text-sm font-medium ${
+                      watch('isActive') ? 'text-green-400' : 'text-gray-400'
+                    }`}>
+                      {watch('isActive') ? 'Active' : 'Inactive'}
+                    </span>
+                    <span className="text-xs text-white/60">
+                      {watch('isActive') 
+                        ? 'Company is active and visible to users' 
+                        : 'Company is inactive and hidden from users'
+                      }
+                    </span>
+                  </div>
+                </div>
+
                 {/* Submit Button */}
                 <div className="flex justify-end space-x-4 pt-6">
-                  <Link href="/dashboard">
+                  <Link href="/customers">
                     <Button
                       type="button"
                       variant="outline"
                       className="border-white text-white hover:bg-white hover:text-gray-900"
                     >
+                      <X className="h-4 w-4 mr-2" />
                       Cancel
                     </Button>
                   </Link>
                   <Button
                     type="submit"
                     className="bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={isLoading}
+                    disabled={isSaving}
                   >
-                    {isLoading ? 'Creating Company...' : 'Create Company'}
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Updating...' : 'Update Company'}
                   </Button>
                 </div>
               </form>

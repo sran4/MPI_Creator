@@ -27,7 +27,7 @@ export interface IMPI extends Document {
   dateReleased: string
   pages: string
   sections: IMPISection[]
-  status: 'draft' | 'in-review' | 'approved' | 'archived'
+  status: 'draft' | 'in-review' | 'approved' | 'rejected' | 'archived'
   versionHistory: {
     version: string
     date: Date

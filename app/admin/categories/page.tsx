@@ -1,26 +1,25 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  ArrowLeft, 
-  Save, 
-  X,
-  Folder,
+import { motion } from 'framer-motion'
+import {
+  ArrowLeft,
+  Edit,
   FileText,
-  Users
+  Folder,
+  Plus,
+  Save,
+  Trash2,
+  Users,
+  X
 } from 'lucide-react'
-import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface Category {
   _id: string
@@ -204,7 +203,7 @@ export default function CategoriesPage() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-white">Category Management</h1>
+              <h1 className="text-3xl font-bold text-white">Process Items | Category Management</h1>
               <p className="text-white/70 mt-1">Manage step categories for your MPI system</p>
             </div>
           </div>
@@ -215,6 +214,47 @@ export default function CategoriesPage() {
             <Plus className="h-4 w-4 mr-2" />
             Add Category
           </Button>
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Folder className="h-5 w-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-white/70 text-sm">Total Categories</p>
+                <p className="text-white text-xl font-semibold">{categories.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <FileText className="h-5 w-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-white/70 text-sm">Total Tasks</p>
+                <p className="text-white text-xl font-semibold">
+                  {categories.reduce((sum, cat) => sum + (typeof cat.steps === 'number' ? cat.steps : 0), 0)}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Users className="h-5 w-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-white/70 text-sm">Total Uses</p>
+                <p className="text-white text-xl font-semibold">
+                  {categories.reduce((sum, cat) => sum + (typeof cat.usageCount === 'number' ? cat.usageCount : 0), 0)}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Form Modal */}
@@ -323,7 +363,7 @@ export default function CategoriesPage() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center text-white/70">
                       <FileText className="h-4 w-4 mr-1" />
-                      {category.steps?.length || 0} steps
+                      {typeof category.steps === 'number' ? category.steps : (category.steps?.length || 0)} steps
                     </div>
                     <div className="flex items-center text-white/70">
                       <Users className="h-4 w-4 mr-1" />

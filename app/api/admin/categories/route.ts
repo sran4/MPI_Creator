@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import ProcessItems from '@/models/ProcessItems'
+import Task from '@/models/Task'
 import jwt from 'jsonwebtoken'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,11 +20,39 @@ export async function GET(request: NextRequest) {
 
     const categories = await ProcessItems.find({ isActive: true })
       .sort({ categoryName: 1 })
-      .select('_id categoryName steps usageCount createdAt updatedAt')
+      .select('_id categoryName createdAt updatedAt')
+
+    // Calculate task counts and usage statistics for each category
+    const categoriesWithStats = await Promise.all(
+      categories.map(async (category) => {
+        // Count tasks in this category
+        const taskCount = await Task.countDocuments({ 
+          processItem: category._id, 
+          isActive: true 
+        })
+
+        // Calculate total usage count for tasks in this category
+        const tasks = await Task.find({ 
+          processItem: category._id, 
+          isActive: true 
+        }).select('usageCount')
+
+        const totalUsage = tasks.reduce((sum, task) => sum + (task.usageCount || 0), 0)
+
+        return {
+          _id: category._id,
+          categoryName: category.categoryName,
+          steps: taskCount, // Number of tasks in this category
+          usageCount: totalUsage, // Total usage count of all tasks in this category
+          createdAt: category.createdAt,
+          updatedAt: category.updatedAt
+        }
+      })
+    )
 
     return NextResponse.json({ 
       success: true, 
-      categories 
+      categories: categoriesWithStats 
     })
   } catch (error) {
     console.error('Error fetching categories:', error)

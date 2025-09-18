@@ -1,37 +1,34 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { 
-  Plus, 
-  Save, 
-  ArrowLeft, 
-  ArrowUp,
-  FileText,
-  Printer,
-  Folder,
-  Users,
-  Search,
-  Trash2,
-  Edit,
-  X,
-  Image as ImageIcon,
-  FileImage,
-  Link as LinkIcon,
-  Clipboard,
-  GripVertical,
-  ChevronUp,
-  ChevronDown
-} from 'lucide-react'
-import toast from 'react-hot-toast'
-import Link from 'next/link'
 import { Editor } from '@tinymce/tinymce-react'
+import { motion } from 'framer-motion'
+import {
+  ArrowLeft,
+  ArrowUp,
+  ChevronDown,
+  ChevronUp,
+  Clipboard,
+  Edit,
+  FileImage,
+  FileText,
+  Folder,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  Plus,
+  Printer,
+  Save,
+  Trash2,
+  X
+} from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface MPI {
   _id: string
@@ -438,7 +435,7 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
   }
 
 
-  const handleBulkInsertTasks = (taskIds: string[], sectionId: string) => {
+  const handleBulkInsertTasks = async (taskIds: string[], sectionId: string) => {
     if (!mpi) return
     
     const selectedTasksData = tasks.filter(task => taskIds.includes(task._id))
@@ -464,6 +461,36 @@ export default function MPIEditorPage({ params }: { params: { id: string } }) {
       ...mpi,
       sections: updatedSections
     })
+
+    // Increment usage count for each selected task
+    try {
+      const token = localStorage.getItem('token')
+      await Promise.all(
+        selectedTasksData.map(async (task) => {
+          const response = await fetch(`/api/admin/steps/${task._id}/increment-usage`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+          
+          if (response.ok) {
+            // Update the local tasks state to reflect the new usage count
+            setTasks(prevTasks => 
+              prevTasks.map(t => 
+                t._id === task._id 
+                  ? { ...t, usageCount: t.usageCount + 1 }
+                  : t
+              )
+            )
+          }
+        })
+      )
+    } catch (error) {
+      console.error('Error incrementing task usage count:', error)
+      // Don't show error to user as the main functionality (inserting tasks) still works
+    }
 
     setShowBulkTaskModal(false)
     setSelectedTasks([])

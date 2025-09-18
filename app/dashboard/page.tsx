@@ -1,36 +1,33 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { 
-  Plus, 
-  FileText, 
-  Users, 
-  Settings, 
-  Search,
-  Filter,
-  MoreVertical,
-  Eye,
-  Edit,
-  Trash2,
-  Download,
-  Calendar,
-  User,
+import { motion } from 'framer-motion'
+import {
   Building,
-  Printer,
+  Calendar,
   CheckSquare,
-  Lock,
+  Edit,
+  Eye,
   EyeOff,
-  Save
+  FileText,
+  Lock,
+  Plus,
+  Printer,
+  Save,
+  Search,
+  Settings,
+  Trash2,
+  User,
+  Users
 } from 'lucide-react'
-import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface User {
   _id: string
@@ -79,6 +76,8 @@ export default function DashboardPage() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   const router = useRouter()
 
   const fetchUser = async () => {
@@ -239,6 +238,17 @@ export default function DashboardPage() {
     return matchesSearch && matchesStatus
   })
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredMPIs.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedMPIs = filteredMPIs.slice(startIndex, endIndex)
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter])
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
@@ -280,7 +290,7 @@ export default function DashboardPage() {
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Create MPI/Traveler Combo
+                Create MPI / Traveler 
               </Button>
             </Link>
             <Link href="/tasks/new">
@@ -288,7 +298,7 @@ export default function DashboardPage() {
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <CheckSquare className="h-4 w-4 mr-2" />
-                New Task
+                Add New Task
               </Button>
             </Link>
             <Link href="/customers/new">
@@ -296,7 +306,7 @@ export default function DashboardPage() {
                 className="bg-red-500 hover:bg-red-600 text-white"
               >
                 <Building className="h-4 w-4 mr-2" />
-                New Customer
+                Add New Customer
               </Button>
             </Link>
           </div>
@@ -417,6 +427,14 @@ export default function DashboardPage() {
             <Settings className="h-4 w-4 mr-2 inline" />
             Settings
           </button>
+          
+          {/* View All MPIs Button */}
+          <Link href="/mpis/all">
+            <button className="px-4 py-2 rounded-lg font-medium transition-colors bg-purple-500 hover:bg-purple-600 text-white ml-4">
+              <FileText className="h-4 w-4 mr-2 inline" />
+              View All MPIs
+            </button>
+          </Link>
           </div>
 
         {/* Content based on active tab */}
@@ -469,7 +487,7 @@ export default function DashboardPage() {
               </Card>
             ) : (
               <div className="space-y-3">
-                {filteredMPIs.map((mpi) => (
+                {paginatedMPIs.map((mpi) => (
                 <motion.div
                   key={mpi._id}
                     initial={{ opacity: 0, x: -20 }}
@@ -554,6 +572,62 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
+
+            {/* Pagination Controls */}
+            {filteredMPIs.length > itemsPerPage && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                    size="sm"
+                    className="text-white border-white/20 hover:bg-white/10"
+                  >
+                    Previous
+                  </Button>
+                  
+                  <span className="text-white/70 text-sm px-3">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <Button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                    size="sm"
+                    className="text-white border-white/20 hover:bg-white/10"
+                  >
+                    Next
+                  </Button>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <span className="text-white/70 text-sm">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredMPIs.length)} of {filteredMPIs.length} MPIs
+                  </span>
+                  
+                  <Link href="/mpis/all">
+                    <Button className="bg-purple-500 hover:bg-purple-600 text-white">
+                      <FileText className="h-4 w-4 mr-2" />
+                      View All MPIs
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Show View All button even when there are fewer than 10 MPIs */}
+            {filteredMPIs.length <= itemsPerPage && filteredMPIs.length > 0 && (
+              <div className="flex justify-center mt-6">
+                <Link href="/mpis/all">
+                  <Button className="bg-purple-500 hover:bg-purple-600 text-white">
+                    <FileText className="h-4 w-4 mr-2" />
+                    View All MPIs
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
@@ -565,12 +639,20 @@ export default function DashboardPage() {
               <p className="text-white/70 mb-6">
                 Manage your customer information and company details.
               </p>
-              <Link href="/customers/new">
-                <Button className="bg-red-500 hover:bg-red-600 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Customer
-                          </Button>
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/customers">
+                  <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+                    <Users className="h-4 w-4 mr-2" />
+                    View All Customers
+                  </Button>
+                </Link>
+                <Link href="/customers/new">
+                  <Button className="bg-red-500 hover:bg-red-600 text-white">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Customer
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         )}

@@ -66,7 +66,6 @@ const CustomerCompanySchema = new Schema<ICustomerCompany>({
 })
 
 // Index for better performance
-CustomerCompanySchema.index({ companyName: 1 })
 CustomerCompanySchema.index({ city: 1 })
 CustomerCompanySchema.index({ state: 1 })
 CustomerCompanySchema.index({ isActive: 1 })
