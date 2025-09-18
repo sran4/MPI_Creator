@@ -162,8 +162,8 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
     )
   }
 
-  // Debug Form ID
-  const formIdValue = mpi.formId?.formId || mpi.formId || mpi._id || 'N/A'
+  // Human-readable Form ID only
+  const formIdValue = mpi.formId?.formId ?? 'N/A'
   const dateTimeValue = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
   console.log('🔍 Print Preview Debug:', {
     formIdValue,
@@ -177,6 +177,18 @@ export default function PrintPreviewPage({ params }: PrintPreviewPageProps) {
       {/* Print-specific CSS for page numbering, Form ID, and date/time */}
       <style jsx global>{`
         @media print {
+          /* Ensure containers don't clip content to a single page */
+          .h-screen, .min-h-screen, .flex, .flex-1, .flex-col {
+            height: auto !important;
+            min-height: auto !important;
+            display: block !important;
+          }
+          .overflow-y-auto, .overflow-auto, .overflow-y-scroll, .overflow-scroll {
+            overflow: visible !important;
+          }
+          .max-w-4xl, .mx-auto, .p-6 {
+            max-height: none !important;
+          }
           @page {
             margin: 0.75in !important;
             size: 8.5in 11in !important;

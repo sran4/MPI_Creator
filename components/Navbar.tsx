@@ -1,20 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { 
-  User, 
-  LogOut, 
-  Settings, 
-  FileText, 
-  Users, 
-  Building,
-  Menu,
-  X,
-  Home
+import {
+    FileText,
+    Home,
+    LogOut,
+    Menu,
+    Settings,
+    User,
+    X
 } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
 interface User {
@@ -35,10 +33,24 @@ export default function Navbar() {
 
   useEffect(() => {
     setMounted(true)
-    checkAuthStatus()
+    // Hydrate from cache immediately (non-blocking)
+    try {
+      const cachedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null
+      const cachedUserType = typeof window !== 'undefined' ? localStorage.getItem('userType') : null
+      if (cachedUser) {
+        const parsed = JSON.parse(cachedUser)
+        setUser({ ...parsed, userType: (parsed.userType || cachedUserType) as User['userType'] })
+      }
+    } catch {}
+
+    // Verify in background with timeout to avoid long blocking
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3500)
+    checkAuthStatus(controller.signal).finally(() => clearTimeout(timeoutId))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = async (signal?: AbortSignal) => {
     try {
       if (typeof window === 'undefined') {
         setIsLoading(false)
@@ -47,31 +59,37 @@ export default function Navbar() {
       
       const token = localStorage.getItem('token')
       if (!token) {
-        console.log('No token found, showing auth links')
+        // No token, render immediately
         setIsLoading(false)
         return
       }
 
-      console.log('Token found, checking auth status')
       const response = await fetch('/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        signal
       })
 
       if (response.ok) {
         const data = await response.json()
-        console.log('User authenticated:', data.user)
         setUser(data.user)
+        try {
+          localStorage.setItem('user', JSON.stringify(data.user))
+          localStorage.setItem('userType', data.user.userType)
+        } catch {}
       } else {
-        console.log('Auth failed, removing token')
         localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('userType')
         setUser(null)
       }
     } catch (error) {
-      console.error('Error checking auth status:', error)
+      // Swallow network/abort errors to avoid blocking first paint
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('userType')
       }
       setUser(null)
     } finally {
@@ -90,7 +108,7 @@ export default function Navbar() {
 
   const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/admin/signup'
 
-  console.log('Navbar render - mounted:', mounted, 'isLoading:', isLoading, 'user:', user, 'pathname:', pathname, 'window width:', typeof window !== 'undefined' ? window.innerWidth : 'server')
+  // Avoid verbose logs in production to keep console clean and faster
 
   if (!mounted || isLoading) {
     return (

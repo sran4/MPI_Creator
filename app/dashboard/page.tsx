@@ -537,7 +537,7 @@ export default function DashboardPage() {
                             <Link 
                               href={`/mpi/${mpi._id}/edit`}
                               className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors inline-flex items-center justify-center relative group"
-                              title="Edit MPI"
+                             
                           >
                             <Edit className="h-4 w-4" />
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-blue-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">

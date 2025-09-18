@@ -1,18 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Mail, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { ArrowLeft, Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import { z } from 'zod'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -56,11 +56,15 @@ export default function LoginPage() {
       const result = await response.json()
 
       if (response.ok) {
-        // Store token in localStorage
+        // Store token and user cache in localStorage for faster first paint
         localStorage.setItem('token', result.token)
-        
+        try {
+          localStorage.setItem('user', JSON.stringify(result.user))
+          localStorage.setItem('userType', result.userType)
+        } catch {}
+
         toast.success(`Welcome back, ${result.user.fullName || result.user.email}!`)
-        
+
         // Redirect based on user type
         if (result.userType === 'admin') {
           router.push('/admin/dashboard')
