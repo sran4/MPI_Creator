@@ -580,7 +580,7 @@ export default function NewMPIPage() {
             <CardHeader className='text-center'>
               <div className='flex items-center justify-between'>
                 <Link
-                  href='/dashboard'
+                  href='/engineer/dashboard'
                   className='flex items-center text-white/80 hover:text-white transition-colors'
                 >
                   <ArrowLeft className='h-5 w-5 mr-2' />
@@ -744,7 +744,7 @@ export default function NewMPIPage() {
                               id='oldJobNumber'
                               type='text'
                               placeholder='Search old job number (optional)'
-                              className='bg-white border-gray-300 text-gray-900'
+                              className='bg-white/10 border-white/20 text-white placeholder:text-white/70'
                               {...register('oldJobNumber')}
                               onFocus={() => setShowSuggestions(true)}
                               onBlur={() =>
@@ -757,9 +757,7 @@ export default function NewMPIPage() {
                                   <div
                                     key={job}
                                     onMouseDown={() => {
-                                      document.getElementById(
-                                        'oldJobNumber'
-                                      ).value = job;
+                                      setValue('oldJobNumber', job);
                                       setShowSuggestions(false);
                                     }}
                                     className='px-3 py-2 hover:bg-gray-100 cursor-pointer text-black'
@@ -861,9 +859,12 @@ export default function NewMPIPage() {
                               }}
                             >
                               <SelectTrigger
-                                className={`bg-white border-gray-300 text-gray-900 ${errors.formId ? 'border-red-500' : ''}`}
+                                className={`bg-white/10 border-white/20 text-white ${errors.formId ? 'border-red-500' : ''}`}
                               >
-                                <SelectValue placeholder='Select a form...' />
+                                <SelectValue
+                                  placeholder='Select a form...'
+                                  className='text-white/70'
+                                />
                               </SelectTrigger>
                               <SelectContent className='bg-white text-gray-900 border border-gray-200 shadow-xl'>
                                 {forms.length === 0 ? (
@@ -948,9 +949,12 @@ export default function NewMPIPage() {
                               }
                             >
                               <SelectTrigger
-                                className={`bg-white border-gray-300 text-gray-900 ${errors.customerCompanyId ? 'border-red-500' : ''}`}
+                                className={`bg-white/10 border-white/20 text-white ${errors.customerCompanyId ? 'border-red-500' : ''}`}
                               >
-                                <SelectValue placeholder='Select customer company' />
+                                <SelectValue
+                                  placeholder='Select customer company'
+                                  className='text-white/70'
+                                />
                               </SelectTrigger>
                               <SelectContent className='bg-white text-gray-900 border border-gray-200 shadow-xl'>
                                 {customerCompanies.length === 0 ? (
@@ -1227,7 +1231,7 @@ export default function NewMPIPage() {
                           <Button
                             type='button'
                             variant='outline'
-                            onClick={() => router.push('/dashboard')}
+                            onClick={() => router.push('/engineer/dashboard')}
                             className='text-white border-white/20 hover:bg-white/10'
                           >
                             Cancel
