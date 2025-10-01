@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in debug endpoint:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

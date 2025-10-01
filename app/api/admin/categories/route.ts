@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       success: true, 
       categories: categoriesWithStats 
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching categories:', error)
     return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
   }

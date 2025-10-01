@@ -49,12 +49,12 @@ export async function POST(request: NextRequest) {
 
     // Return engineer data without password
     const engineerData = engineer.toObject()
-    delete engineerData.password
+    const { password: _, ...userWithoutPassword } = engineerData
 
     return NextResponse.json({
       success: true,
       token,
-      user: engineerData,
+      user: userWithoutPassword,
       userType: 'engineer'
     }, { status: 201 })
 

@@ -25,7 +25,7 @@ export async function DELETE(request: NextRequest) {
       message: 'All forms deleted successfully'
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error resetting forms:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

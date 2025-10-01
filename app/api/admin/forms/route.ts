@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ forms })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching forms:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

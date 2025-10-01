@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     let decoded: any
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    } catch (jwtError) {
+    } catch (jwtError: any) {
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
     }
 
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ mpis })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching MPIs for admin:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest) {
     let decoded: any
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    } catch (jwtError) {
+    } catch (jwtError: any) {
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
     }
 
@@ -102,7 +102,7 @@ export async function PUT(request: NextRequest) {
       mpi: updatedMpi 
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating MPI status:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

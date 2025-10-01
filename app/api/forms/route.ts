@@ -7,7 +7,7 @@ export async function GET() {
     await dbConnect()
     const forms = await Form.find({ isActive: true }).sort({ formId: 1 })
     return NextResponse.json({ forms })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching forms:', error)
     return NextResponse.json({ error: 'Failed to fetch forms' }, { status: 500 })
   }
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     
     await form.save()
     return NextResponse.json({ form }, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating form:', error)
     return NextResponse.json({ error: 'Failed to create form' }, { status: 500 })
   }

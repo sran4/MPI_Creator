@@ -63,16 +63,16 @@ export async function POST(request: NextRequest) {
 
     // Return user data without password
     const userData = user.toObject()
-    delete userData.password
+    const { password: _, ...userWithoutPassword } = userData
 
     return NextResponse.json({
       success: true,
       token,
-      user: userData,
+      user: userWithoutPassword,
       userType
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

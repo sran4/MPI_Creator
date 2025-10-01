@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ documentIds })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching document IDs:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

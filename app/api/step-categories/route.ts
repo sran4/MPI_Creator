@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         updatedAt: cat.updatedAt
       }))
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching step categories:', error)
     return NextResponse.json({ error: 'Failed to fetch step categories' }, { status: 500 })
   }
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         usageCount: category.usageCount
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adding step to category:', error)
     console.error('Error details:', {
       message: error.message,

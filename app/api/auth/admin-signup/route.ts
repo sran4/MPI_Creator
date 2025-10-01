@@ -59,12 +59,12 @@ export async function POST(request: NextRequest) {
 
     // Return admin data without password
     const adminData = admin.toObject()
-    delete adminData.password
+    const { password: _, ...userWithoutPassword } = adminData
 
     return NextResponse.json({
       success: true,
       token,
-      user: adminData,
+      user: userWithoutPassword,
       userType: 'admin'
     }, { status: 201 })
 

@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ steps })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching tasks:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

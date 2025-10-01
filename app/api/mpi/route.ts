@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         '✅ Dashboard API - Token verified, Engineer ID:',
         decoded.userId
       );
-    } catch (jwtError) {
+    } catch (jwtError: any) {
       console.error('❌ Dashboard API - JWT verification failed:', jwtError);
       return NextResponse.json(
         { error: 'Invalid or expired token' },
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Dashboard API - Fetched MPIs:', mpis.length);
     return NextResponse.json({ mpis });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching MPIs:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
@@ -353,7 +353,7 @@ export async function POST(request: NextRequest) {
 
       await docsRecord.save();
       console.log(`✅ Created Docs record for MPI: ${mpiNumber}`);
-    } catch (docsError) {
+    } catch (docsError: any) {
       console.error('Error creating Docs record:', docsError);
       // Don't fail the MPI creation if Docs creation fails
     }
@@ -375,7 +375,7 @@ export async function POST(request: NextRequest) {
 
       await customerRecord.save();
       console.log(`✅ Created Customer record for MPI: ${mpiNumber}`);
-    } catch (customerError) {
+    } catch (customerError: any) {
       console.error('Error creating Customer record:', customerError);
       // Don't fail the MPI creation if Customer creation fails
     }

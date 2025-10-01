@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       message: 'Password changed successfully'
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error changing password:', error)
     
     if (error.name === 'JsonWebTokenError') {

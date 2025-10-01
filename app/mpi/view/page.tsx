@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
-export default function MPIViewPage() {
+function MPIViewContent() {
   const [mpi, setMpi] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -134,5 +134,17 @@ export default function MPIViewPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MPIViewPage() {
+  return (
+    <Suspense fallback={
+      <div className='min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center'>
+        <div className='text-white text-xl'>Loading...</div>
+      </div>
+    }>
+      <MPIViewContent />
+    </Suspense>
   );
 }

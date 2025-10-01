@@ -177,9 +177,9 @@ export async function PUT(
       const docsRecord = await Docs.findOne({ mpiNo: mpi.mpiNumber });
       if (docsRecord) {
         docsRecord.jobNo = mpi.jobNumber;
-        docsRecord.oldJobNo = mpi.oldJobNumber || null;
+        docsRecord.oldJobNo = mpi.oldJobNumber || undefined;
         docsRecord.mpiNo = mpi.mpiNumber;
-        docsRecord.mpiRev = mpi.mpiVersion || null;
+        docsRecord.mpiRev = mpi.mpiVersion || undefined;
         await docsRecord.save();
         console.log(`✅ Updated Docs record for MPI: ${mpi.mpiNumber}`);
       }

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         .sort({ createdAt: -1 })
       
       console.log(`Found ${customers.length} customers for engineer ${engineerId}`)
-    } catch (populateError) {
+    } catch (populateError: any) {
       console.log('Populate failed, trying without populate:', populateError.message)
       
       // If populate fails, try without it

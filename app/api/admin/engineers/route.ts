@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ engineers })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching engineers:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ customerCompanies })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching customer companies:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

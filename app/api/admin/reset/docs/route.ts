@@ -26,7 +26,7 @@ export async function DELETE(request: NextRequest) {
       deletedCount: result.deletedCount
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error resetting docs records:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

@@ -27,7 +27,7 @@ export async function GET() {
         companies: companies.map(c => ({ id: c._id, name: c.companyName, city: c.city, state: c.state }))
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Test API error:', error)
     return NextResponse.json({
       success: false,

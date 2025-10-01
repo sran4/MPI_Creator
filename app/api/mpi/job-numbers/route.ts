@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       oldJobNumbers: [...new Set(oldJobNumbers)] // Remove duplicates
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching job numbers:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       jobNumber
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating job number:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

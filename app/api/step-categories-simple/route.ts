@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const tasks = await Task.find({ isActive: true }).populate('processItem', 'categoryName')
 
     // Group tasks by category
-    const categoriesWithSteps = categories.map(cat => {
+    const categoriesWithSteps = categories.map((cat: any) => {
       const categorySteps = tasks
         .filter(task => task.processItem && task.processItem._id.toString() === cat._id.toString())
         .map(task => ({
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       success: true, 
       categories: categoriesWithSteps
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching step categories:', error)
     return NextResponse.json({ error: 'Failed to fetch step categories' }, { status: 500 })
   }

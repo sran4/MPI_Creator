@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       mpiNumber
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating MPI number:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

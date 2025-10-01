@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       userType
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching user data:', error)
     
     if (error.name === 'JsonWebTokenError') {
