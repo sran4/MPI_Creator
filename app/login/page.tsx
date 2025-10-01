@@ -71,7 +71,12 @@ export default function LoginPage() {
         // Store token and user cache in localStorage for faster first paint
         localStorage.setItem('token', result.token);
         try {
-          localStorage.setItem('user', JSON.stringify(result.user));
+          // Merge userType into user object for consistency
+          const userWithType = {
+            ...result.user,
+            userType: result.userType,
+          };
+          localStorage.setItem('user', JSON.stringify(userWithType));
           localStorage.setItem('userType', result.userType);
         } catch {}
 

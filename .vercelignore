@@ -1,0 +1,38 @@
+# Development files
+*.md
+!README.md
+!DEVELOPMENT.md
+!RESUME_PROJECT_DESCRIPTION.md
+
+# Security - Never deploy key files
+SECURE_KEYS_SUMMARY.md
+JWT_SECRET_GENERATOR.md
+ADMIN_SIGNUP_KEY_SETUP.md
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Documentation images
+app/docs/images/
+
+# Local environment
+.env.local
+.env*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+

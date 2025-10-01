@@ -17,47 +17,66 @@ interface User {
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    setMounted(true);
-    // Hydrate from cache immediately (non-blocking)
+  // Helper function to load cached user data
+  const loadCachedUser = () => {
     try {
-      const cachedUser =
-        typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-      const cachedUserType =
-        typeof window !== 'undefined' ? localStorage.getItem('userType') : null;
-      if (cachedUser) {
+      if (typeof window === 'undefined') return;
+
+      const cachedUser = localStorage.getItem('user');
+      const cachedUserType = localStorage.getItem('userType');
+      const token = localStorage.getItem('token');
+
+      // Only load cached user if we have a token
+      if (cachedUser && token) {
         const parsed = JSON.parse(cachedUser);
         setUser({
           ...parsed,
           userType: (parsed.userType || cachedUserType) as User['userType'],
         });
+      } else if (!token) {
+        // Clear user if no token
+        setUser(null);
       }
-    } catch {}
+    } catch (error) {
+      console.error('Error loading cached user:', error);
+    }
+  };
 
-    // Verify in background with timeout to avoid long blocking
+  // Initial mount effect
+  useEffect(() => {
+    setMounted(true);
+
+    // Load immediately
+    loadCachedUser();
+
+    // Verify in background without blocking render
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
     checkAuthStatus(controller.signal).finally(() => clearTimeout(timeoutId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Refresh user state when pathname changes (e.g., after login redirect)
+  useEffect(() => {
+    if (mounted) {
+      loadCachedUser();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, mounted]);
+
   const checkAuthStatus = async (signal?: AbortSignal) => {
     try {
       if (typeof window === 'undefined') {
-        setIsLoading(false);
         return;
       }
 
       const token = localStorage.getItem('token');
       if (!token) {
-        // No token, render immediately
-        setIsLoading(false);
         return;
       }
 
@@ -70,10 +89,15 @@ export default function Navbar() {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        // Merge userType into user object for consistency
+        const userWithType = {
+          ...data.user,
+          userType: data.userType,
+        };
+        setUser(userWithType);
         try {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          localStorage.setItem('userType', data.user.userType);
+          localStorage.setItem('user', JSON.stringify(userWithType));
+          localStorage.setItem('userType', data.userType);
         } catch {}
       } else {
         localStorage.removeItem('token');
@@ -89,14 +113,15 @@ export default function Navbar() {
         localStorage.removeItem('userType');
       }
       setUser(null);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
+      // Clear all auth-related data
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userType');
     }
     setUser(null);
     toast.success('Logged out successfully');
@@ -108,48 +133,9 @@ export default function Navbar() {
     pathname === '/signup' ||
     pathname === '/admin/signup';
 
-  // Avoid verbose logs in production to keep console clean and faster
-
-  if (!mounted || isLoading) {
-    return (
-      <nav className='bg-white/10 backdrop-blur-md border-b border-white/20 sticky top-0 z-50 w-full block'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full'>
-          <div className='flex justify-between items-center h-16 w-full'>
-            <div className='flex items-center'>
-              <Link
-                href='/'
-                className='text-white text-xl font-bold flex items-center'
-              >
-                <FileText className='h-6 w-6 mr-2' />
-                MPI Traveler Combo Creator
-              </Link>
-            </div>
-            <div className='hidden items-center justify-center space-x-2 2xl:space-x-4'>
-              <Link href='/login'>
-                <Button className='bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-lg flex items-center justify-center'>
-                  Sign In
-                </Button>
-              </Link>
-              <Link href='/signup'>
-                <Button className='bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg shadow-red-500/25'>
-                  Sign Up
-                </Button>
-              </Link>
-            </div>
-            {/* Burger menu button for loading state */}
-            <div>
-              <Button
-                variant='ghost'
-                size='sm'
-                className='text-white hover:bg-white/10'
-              >
-                <Menu className='h-5 w-5' />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-    );
+  // Don't block rendering - show navbar immediately
+  if (!mounted) {
+    return null;
   }
 
   return (

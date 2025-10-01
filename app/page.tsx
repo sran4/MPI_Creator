@@ -25,8 +25,10 @@ import { useEffect, useState } from 'react';
 export default function HomePage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const token = localStorage.getItem('token');
     if (token) {
       setIsAuthenticated(true);
@@ -75,6 +77,7 @@ export default function HomePage() {
     },
   ];
 
+  // Show content immediately, no need to block rendering
   return (
     <div className='min-h-screen'>
       {/* Floating Background Elements */}

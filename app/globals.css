@@ -2,11 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-* {
-  font-family: 'Inter', sans-serif;
-}
+/* PERFORMANCE OPTIMIZATION: Font is loaded via Next.js in layout.tsx for better performance */
+/* @import url removed to prevent blocking render */
 
 @layer base {
   /* Fix for select dropdown text visibility in dark themes */
@@ -14,8 +11,8 @@
     background-color: #1f2937 !important;
     color: #ffffff !important;
   }
-  
-  select[style*="colorScheme: dark"] option {
+
+  select[style*='colorScheme: dark'] option {
     background-color: #1f2937 !important;
     color: #ffffff !important;
   }
@@ -81,24 +78,24 @@
   .glassmorphism {
     @apply bg-white/10 backdrop-blur-md border border-white/20;
   }
-  
+
   .glassmorphism-card {
     background-color: rgba(239, 68, 68, 0.2) !important;
     backdrop-filter: blur(16px) !important;
     border: 1px solid rgba(248, 113, 113, 0.3) !important;
     box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.25) !important;
   }
-  
+
   .glassmorphism-card-hover {
     transition: all 0.3s ease !important;
   }
-  
+
   .glassmorphism-card-hover:hover {
     background-color: rgba(239, 68, 68, 0.3) !important;
     border-color: rgba(248, 113, 113, 0.4) !important;
     box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.3) !important;
   }
-  
+
   /* Force red glassmorphism on all cards */
   div.glassmorphism-card {
     background-color: rgba(239, 68, 68, 0.2) !important;
@@ -106,87 +103,117 @@
     border: 1px solid rgba(248, 113, 113, 0.3) !important;
     box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.25) !important;
   }
-  
+
   .glassmorphism-red {
     @apply bg-red-500/20 backdrop-blur-md border border-red-400/30 shadow-lg shadow-red-500/10;
   }
-  
+
   .glassmorphism-red-hover {
     @apply hover:bg-red-500/30 hover:border-red-400/40 hover:shadow-xl hover:shadow-red-500/20 transition-all duration-300;
   }
-  
+
   .glassmorphism-dark {
     @apply bg-black/10 backdrop-blur-md border border-white/10;
   }
-  
+
   .glassmorphism-light {
     @apply bg-white/20 backdrop-blur-md border border-gray-200/30;
   }
-  
+
   .gradient-bg {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
-  
+
   .gradient-bg-enhanced {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
     background-size: 200% 200%;
     animation: gradientShift 8s ease infinite;
   }
-  
+
   .gradient-bg-light {
     background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
   }
-  
+
   .floating {
     animation: floating 6s ease-in-out infinite;
   }
-  
+
   .shake {
     animation: shake 0.5s ease-in-out;
   }
-  
+
   .fade-in {
     animation: fadeIn 0.3s ease-in-out;
   }
-  
+
   .slide-in {
     animation: slideIn 0.3s ease-out;
   }
-  
+
   .drag-handle {
     @apply cursor-grab active:cursor-grabbing;
   }
-  
+
   .auto-expand {
     @apply resize-none overflow-hidden;
   }
 }
 
 @keyframes floating {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* Custom scrollbar */

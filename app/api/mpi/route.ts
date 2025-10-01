@@ -58,35 +58,17 @@ export async function GET(request: NextRequest) {
     const engineerId = decoded.userId;
     console.log('🔍 Dashboard API - Fetching MPIs for engineer:', engineerId);
 
-    // Fetch MPIs and handle populate gracefully
-    const mpis = await MPI.find({ engineerId, isActive: true }).sort({
-      updatedAt: -1,
-    });
+    // PERFORMANCE OPTIMIZATION: Use compound index and populate in single query
+    // This replaces the N+1 query problem with a single efficient query
+    const mpis = await MPI.find({ engineerId, isActive: true })
+      .populate('customerCompanyId', 'companyName city state')
+      .populate('engineerId', 'fullName email')
+      .sort({ updatedAt: -1 })
+      .lean() // Convert to plain JS objects for faster serialization
+      .limit(100); // Limit results for pagination
 
-    // Try to populate customerCompanyId and engineerId for each MPI individually
-    const mpisWithPopulate = await Promise.all(
-      mpis.map(async mpi => {
-        try {
-          if (mpi.customerCompanyId) {
-            await mpi.populate('customerCompanyId', 'companyName city state');
-          }
-          if (mpi.engineerId) {
-            await mpi.populate('engineerId', 'fullName email');
-          }
-          return mpi;
-        } catch (error) {
-          console.log(
-            'Failed to populate data for MPI:',
-            mpi.mpiNumber,
-            error.message
-          );
-          return mpi;
-        }
-      })
-    );
-
-    console.log('Found MPIs:', mpisWithPopulate.length);
-    return NextResponse.json({ mpis: mpisWithPopulate });
+    console.log('✅ Dashboard API - Fetched MPIs:', mpis.length);
+    return NextResponse.json({ mpis });
   } catch (error) {
     console.error('Error fetching MPIs:', error);
     return NextResponse.json(
